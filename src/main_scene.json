@@ -16,6 +16,34 @@
         {
           "file": "scripts/CircleHitbox",
           "args": [16]
+        },
+        {
+          "file": "scripts/Movement",
+          "args": [200, 2.0, 50]
+        },
+        {
+          "file": "scripts/PlayerController",
+          "args": []
+        }
+      ]
+    },
+    {
+      "x": 100,
+      "y": 90,
+      "name": "player2",
+      "tags": ["controllable"],
+      "components": [
+        {
+          "file": "scripts/CellImage",
+          "args": [16, [190, 180, 80], 2, 2]
+        },
+        {
+          "file": "scripts/CircleHitbox",
+          "args": [16]
+        },
+        {
+          "file": "scripts/Movement",
+          "args": [200, 2.0, 50]
         }
       ]
     }

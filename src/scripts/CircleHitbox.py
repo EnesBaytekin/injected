@@ -100,4 +100,3 @@ class CircleHitbox:
 
     def draw(self, obj):
         """Çizim yok (debug için draw_debug kullanılabilir)."""
-        self.draw_debug(obj)
