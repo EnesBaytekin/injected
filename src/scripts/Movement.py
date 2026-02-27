@@ -81,21 +81,6 @@ class Movement:
         obj.x += self.vel_x * app.dt
         obj.y += self.vel_y * app.dt
 
-        # 5. Ekran sınırları (opsiyonel, çıkmasın)
-        scene = app.get_current_scene()
-        if obj.x < 0:
-            obj.x = 0
-            self.vel_x = 0
-        if obj.x > scene.width:
-            obj.x = scene.width
-            self.vel_x = 0
-        if obj.y < 0:
-            obj.y = 0
-            self.vel_y = 0
-        if obj.y > scene.height:
-            obj.y = scene.height
-            self.vel_y = 0
-
     def _apply_repulsion(self, obj):
         """
         Çarpışan objelere yay benzeri itme kuvveti uygular.
