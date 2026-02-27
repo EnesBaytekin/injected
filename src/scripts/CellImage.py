@@ -31,10 +31,28 @@ class CellImage:
         # Mevcut pozisyonlar
         self.current_points = []
 
+        # Granül sistemi
+        self.num_granules = 6
+        self.granules = []
+        for _ in range(self.num_granules):
+            self.granules.append({
+                'angle': random.random() * 2 * math.pi,
+                'distance': random.uniform(0.2, 0.5) * self.radius,  # Merkezden uzaklık
+                'rotation_speed': random.uniform(-2, 2),  # Dönme hızı
+                'pulse_phase': random.random() * 2 * math.pi,  # Boyat pulse phase
+                'pulse_speed': random.uniform(2, 4),  # Boyat pulse hızı
+                'wobble_offset': random.random() * 2 * math.pi,
+                'orbit_radius': random.uniform(0.05, 0.15) * self.radius,  # Mini orbit yarıçapı
+                'orbit_speed': random.uniform(1, 3),  # Orbit hızı
+                'orbit_phase': random.random() * 2 * math.pi,
+            })
+        self.granule_states = []  # Her frame için güncel durumlar
+
     def update(self, obj):
-        """Her frame noktaları hafifçe kaydır"""
+        """Her frame noktaları hafifçe kaydır, granülleri güncelle"""
         app = App()
 
+        # Hücre deformasyonunu güncelle
         new_points = []
         for i, angle in enumerate(self.base_angles):
             # Zaman bazlı wobble
@@ -53,6 +71,39 @@ class CellImage:
             new_points.append((x, y))
 
         self.current_points = new_points
+
+        # Granülleri güncelle
+        self.granule_states = []
+        for g in self.granules:
+            # Ana rotasyon (merkez etrafında dönme)
+            current_angle = g['angle'] + app.now * g['rotation_speed'] * 0.5
+
+            # Mini orbit (merkez etrafında küçük dairesel hareket)
+            orbit_offset_x = math.cos(app.now * g['orbit_speed'] + g['orbit_phase']) * g['orbit_radius']
+            orbit_offset_y = math.sin(app.now * g['orbit_speed'] + g['orbit_phase']) * g['orbit_radius']
+
+            # Hafif rastgele wobble
+            wobble_x = math.cos(app.now * 2 + g['wobble_offset']) * 2
+            wobble_y = math.sin(app.now * 2.3 + g['wobble_offset']) * 2
+
+            # Ana pozisyon
+            base_x = math.cos(current_angle) * g['distance']
+            base_y = math.sin(current_angle) * g['distance']
+
+            # Final pozisyon (tüm offset'ler eklenir)
+            final_x = base_x + orbit_offset_x + wobble_x
+            final_y = base_y + orbit_offset_y + wobble_y
+
+            # Boyat pulse (büyüyüp küçülme)
+            base_radius = max(2, int(self.radius * 0.08))
+            pulse_amount = math.sin(app.now * g['pulse_speed'] + g['pulse_phase']) * 0.4 + 1  # 0.6x - 1.4x
+            final_radius = base_radius * pulse_amount
+
+            self.granule_states.append({
+                'x': final_x,
+                'y': final_y,
+                'radius': final_radius
+            })
 
     def _catmull_rom_spline(self, p0, p1, p2, p3, t):
         """Catmull-Rom spline ile yumuşak eğri (4 nokta arası)"""
@@ -108,15 +159,13 @@ class CellImage:
             # Siyah çerçeve (outline)
             pygame.draw.polygon(surface, (0, 0, 0), curve_points, 3)
 
-        # İç granüller (ilaç tanecikleri) - opsiyonel görsel detay
-        num_granules = 5
-        for i in range(num_granules):
-            angle = (i / num_granules) * 2 * math.pi
-            gr_r = self.radius * 0.4
-            gx = center + math.cos(angle) * gr_r
-            gy = center + math.sin(angle) * gr_r
-            granule_radius = max(2, int(self.radius * 0.1))
-            pygame.draw.circle(surface, (255, 220, 150), (int(gx), int(gy)), granule_radius)
+        # İç granüller (ilaç tanecikleri) - hareketli, dönen, boyut değiştiren
+        for state in self.granule_states:
+            gx = center + state['x']
+            gy = center + state['y']
+            granule_radius = max(1, int(state['radius']))
+            # Daha parlak sarı renk
+            pygame.draw.circle(surface, (255, 235, 180), (int(gx), int(gy)), granule_radius)
 
         # Surface'i ekrana çiz
         screen.blit(Image(surface), obj.x - center, obj.y - center)
