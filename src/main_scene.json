@@ -7,7 +7,7 @@
       "x": 160,
       "y": 90,
       "name": "player",
-      "tags": ["controllable"],
+      "tags": ["controllable", "hero"],
       "components": [
         {
           "file": "scripts/CellImage",
@@ -44,6 +44,18 @@
         {
           "file": "scripts/Movement",
           "args": [200, 2.0, 50]
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "name": "camera_manager",
+      "tags": ["camera"],
+      "components": [
+        {
+          "file": "scripts/CameraManager",
+          "args": ["hero"]
         }
       ]
     }

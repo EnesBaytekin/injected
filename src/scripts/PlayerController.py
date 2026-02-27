@@ -23,8 +23,17 @@ class PlayerController:
 
         # Mouse sol tık (button 1) basılı mı?
         if im.is_mouse_pressed(1):
-            # Mouse pozisyonunu al
+            # Mouse pozisyonunu al (ekran koordinatları)
             mouse_x, mouse_y = im.get_mouse_position()
+
+            # Camera varsa dünya koordinatlarına çevir
+            try:
+                from scripts.Camera import Camera
+                camera = Camera()
+                mouse_x, mouse_y = camera.screen_to_world(mouse_x, mouse_y)
+            except:
+                pass  # Camera yoksa ekran koordinatlarını kullan
+
             movement.set_target(mouse_x, mouse_y)
         else:
             # Tık bırakıldı, çekim kuvvetini durdur

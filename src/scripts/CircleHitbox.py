@@ -80,16 +80,26 @@ class CircleHitbox:
         """
         Debug çizim (opsiyonel).
         Çağırmak için draw() içinde kullanılabilir.
+        Camera transformu uygular.
         """
 
         screen = Screen()
         center = self.get_world_center(obj)
 
+        # Camera transform uygula
+        draw_x, draw_y = center
+        try:
+            from scripts.Camera import Camera
+            camera = Camera()
+            draw_x, draw_y = camera.world_to_screen(draw_x, draw_y)
+        except:
+            pass
+
         # Yeşil çember çiz (debug için)
         pygame.draw.circle(
             screen.surface,
             (0, 255, 0),
-            (int(center[0]), int(center[1])),
+            (int(draw_x), int(draw_y)),
             int(self.radius),
             1
         )

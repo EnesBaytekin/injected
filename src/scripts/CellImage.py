@@ -167,5 +167,16 @@ class CellImage:
             # Daha parlak sarı renk
             pygame.draw.circle(surface, (255, 235, 180), (int(gx), int(gy)), granule_radius)
 
-        # Surface'i ekrana çiz
-        screen.blit(Image(surface), obj.x - center, obj.y - center)
+        # Camera transform uygula ve çiz
+        draw_x = obj.x - center
+        draw_y = obj.y - center
+
+        # Camera varsa world to screen dönüşümü yap
+        try:
+            from scripts.Camera import Camera
+            camera = Camera()
+            draw_x, draw_y = camera.world_to_screen(draw_x, draw_y)
+        except:
+            pass  # Camera yoksa düz çiz
+
+        screen.blit(Image(surface), draw_x, draw_y)
