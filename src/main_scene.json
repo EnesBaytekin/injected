@@ -7,19 +7,15 @@
       "x": 160,
       "y": 90,
       "name": "player",
-      "tags": ["hero", "controllable", "collidable"],
+      "tags": ["controllable"],
       "components": [
-        {
-          "file": "@Movability",
-          "args": [200, ["collidable", "wall"]]
-        },
         {
           "file": "scripts/CellImage",
           "args": [16, [255, 180, 80], 2, 2]
         },
         {
-          "file": "@YSort",
-          "args": []
+          "file": "scripts/CircleHitbox",
+          "args": [16]
         }
       ]
     }
