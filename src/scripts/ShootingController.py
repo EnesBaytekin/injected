@@ -37,7 +37,7 @@ class ShootingController:
             im = InputManager()
 
             # Sağ tık kontrolü - just pressed ile tek seferlik
-            if im.is_mouse_just_pressed(3):
+            if im.is_mouse_just_pressed(1):
                 # Mouse pozisyonunu al
                 mouse_x, mouse_y = im.get_mouse_position()
 

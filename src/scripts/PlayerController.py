@@ -22,7 +22,7 @@ class PlayerController:
             return
 
         # Mouse sol tık (button 1) basılı mı?
-        if im.is_mouse_pressed(1):
+        if im.is_mouse_pressed(3):
             # Mouse pozisyonunu al (ekran koordinatları)
             mouse_x, mouse_y = im.get_mouse_position()
 
