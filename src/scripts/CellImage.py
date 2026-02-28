@@ -211,6 +211,30 @@ class CellImage:
         for state in self.granule_states:
             gx = center + state['x']
             gy = center + state['y']
+
+            # Granüllere de eliptik deformasyon uygula
+            if stretch_factor > 1.001:
+                # Merkezden relative pozisyon (center'a göre)
+                rel_x = state['x']
+                rel_y = state['y']
+
+                # Hız yönü ve dik yönüne decompose et
+                vel_dot = rel_x * velocity_dir[0] + rel_y * velocity_dir[1]
+                perp_dot = rel_x * perp_dir[0] + rel_y * perp_dir[1]
+
+                # Hız yönünde: stretch_factor kadar uzat
+                vel_dot *= stretch_factor
+                # Dik yönde: 1/stretch_factor kadar kısalt
+                perp_dot /= stretch_factor
+
+                # Tekrar birleştir
+                rel_x = vel_dot * velocity_dir[0] + perp_dot * perp_dir[0]
+                rel_y = vel_dot * velocity_dir[1] + perp_dot * perp_dir[1]
+
+                # Center'ı ekle
+                gx = center + rel_x
+                gy = center + rel_y
+
             granule_radius = max(1, int(state['radius']))
             # Daha parlak sarı renk
             pygame.draw.circle(surface, (255, 235, 180), (int(gx), int(gy)), granule_radius)
