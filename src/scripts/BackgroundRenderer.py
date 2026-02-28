@@ -1,61 +1,93 @@
 """
-Arkaplan renderer - Chunk tabanlı sistem.
-Ekranın 4 köşesini hesaplar, o 4 chunk'ı 4 farklı yere çizer.
+Parallax Background - Sonsuz chunk sistemi.
+Her layer kendi chunk genişliğine sahip, parallax efekti ile derinlik.
 """
 import pygame
 import math
 import random
 
-from pygaminal import App, Screen, Image
+from pygaminal import Screen, Image
 
 
 class BackgroundRenderer:
     """
-    Arkaplan chunk sistemi - tek objeden 4 chunk çizimi.
-    Ekranın 4 köşesini hesaplar, her biri için doğru chunk'ı çizer.
+    Parallax arkaplan - sonsuz chunk sistemi.
+    Her layer farklı chunk boyutunda, kamera hareketine göre farklı hızda kayar.
     """
 
-    def __init__(self, chunk_w, chunk_h):
+    def __init__(self, screen_w, screen_h):
         """
         Args:
-            chunk_w: Chunk genişliği (ekran genişliği)
-            chunk_h: Chunk yüksekliği (ekran yüksekliği)
+            screen_w: Ekran genişliği
+            screen_h: Ekran yüksekliği
         """
-        self.chunk_w = chunk_w
-        self.chunk_h = chunk_h
+        self.screen_w = screen_w
+        self.screen_h = screen_h
 
-        # Chunk görsellerini oluştur (cache)
-        # 4 farklı chunk için sabit görseller
-        self.chunk_surfaces = {}
-        for seed in range(4):
-            self.chunk_surfaces[seed] = self._generate_chunk_surface(seed)
+        # Parallax katmanları: (parallax_factor, chunk_width_multiplier)
+        # parallax 0.0 = sabit, 1.0 = kamera ile aynı hız
+        # chunk_w = screen_w * chunk_width_mult (küçük mult = daha büyük chunk = uzak)
+        self.parallax_layers = [
+            {"factor": 0.15, "chunk_mult": 2.0, "name": "back"},      # En uzak - büyük chunk
+            {"factor": 0.35, "chunk_mult": 1.0, "name": "middle"},    # Orta - normal chunk
+            {"factor": 0.65, "chunk_mult": 0.5, "name": "front"}      # En yakın - küçük chunk
+        ]
 
-    def _generate_chunk_surface(self, seed):
-        """Chunk görselini oluştur (kan damarı teması)."""
-        surface = pygame.Surface((self.chunk_w, self.chunk_h))
+        # Her layer için chunk yüzeylerini oluştur
+        # layer_surfaces[layer_index][seed] = surface
+        self.layer_surfaces = []
 
-        # Ana arkaplan rengi - koyu kırmızı/kan tonu
-        bg_color = (45, 18, 25)
-        surface.fill(bg_color)
+        for layer in self.parallax_layers:
+            chunk_w = int(self.screen_w * layer["chunk_mult"])
+            chunk_h = int(self.screen_h * layer["chunk_mult"])
 
-        # Random seed ile tutarlılık
-        random.seed(seed)
+            surfaces = {}
+            for seed in range(4):  # 4 farklı chunk varyasyonu
+                surfaces[seed] = self._generate_chunk_surface(chunk_w, chunk_h, seed, layer["factor"])
 
-        # Organik hücre detayları (kan damarı hücreleri)
-        num_cells = 8 + random.randint(0, 5)
+            self.layer_surfaces.append({
+                "surfaces": surfaces,
+                "chunk_w": chunk_w,
+                "chunk_h": chunk_h,
+                "factor": layer["factor"]
+            })
+
+    def _generate_chunk_surface(self, chunk_w, chunk_h, seed, parallax_factor):
+        """
+        Chunk yüzeyi oluştur - transparan, sadece bu layer'a ait objeler.
+        """
+        surface = pygame.Surface((chunk_w, chunk_h), pygame.SRCALPHA)
+
+        # Random seed ile tutarlılık (parallax faktörünü de kat)
+        random.seed(seed + int(parallax_factor * 1000))
+
+        # Organik hücre detayları
+        num_cells = 6 + random.randint(0, 4)
 
         for _ in range(num_cells):
             # Rastgele pozisyon
-            cx = random.randint(0, self.chunk_w)
-            cy = random.randint(0, self.chunk_h)
-            radius = random.randint(30, 80)
+            cx = random.randint(0, chunk_w)
+            cy = random.randint(0, chunk_h)
+            radius = random.randint(20, 60)
 
-            # Renk varyasyonu
+            # Parallax faktörüne göre hücre boyutu filtrele
+            # Küçük parallax (uzak) = büyük hücreler
+            # Büyük parallax (yakın) = küçük hücreler
+            if parallax_factor <= 0.2:  # Back layer - büyük hücreler
+                if radius < 40:
+                    continue
+            elif parallax_factor >= 0.6:  # Front layer - küçük hücreler
+                if radius >= 35:
+                    continue
+            # Middle layer - tüm hücreler
+
+            # Renk varyasyonu (katmana göre parlaklık)
+            base_brightness = 40 + int((1.0 - parallax_factor) * 30)  # Uzak = koyu
             color_variation = random.randint(-10, 10)
             cell_color = (
-                max(0, min(255, 50 + color_variation)),
-                max(0, min(255, 18 + color_variation // 2)),
-                max(0, min(255, 25 + color_variation // 2))
+                max(0, min(255, base_brightness + color_variation)),
+                max(0, min(255, 15 + color_variation // 2)),
+                max(0, min(255, 20 + color_variation // 2))
             )
 
             # Hücre çiz (organik şekil)
@@ -73,25 +105,26 @@ class BackgroundRenderer:
 
             # İç detay
             detail_color = (
-                max(0, min(255, cell_color[0] + 15)),
-                max(0, min(255, cell_color[1] + 5)),
-                max(0, min(255, cell_color[2] + 5))
+                max(0, min(255, cell_color[0] + 12)),
+                max(0, min(255, cell_color[1] + 4)),
+                max(0, min(255, cell_color[2] + 4))
             )
             detail_r = radius * 0.3
             pygame.draw.circle(surface, detail_color, (cx, cy), int(detail_r))
 
-        # Damar çizgileri
-        for _ in range(5):
-            x1 = random.randint(0, self.chunk_w)
-            y1 = random.randint(0, self.chunk_h)
-            angle = random.uniform(0, 2 * math.pi)
-            length = random.randint(40, 100)
+        # Damar çizgileri (sadece middle layer)
+        if 0.3 < parallax_factor < 0.4:
+            for _ in range(4):
+                x1 = random.randint(0, chunk_w)
+                y1 = random.randint(0, chunk_h)
+                angle = random.uniform(0, 2 * math.pi)
+                length = random.randint(30, 80)
 
-            x2 = x1 + math.cos(angle) * length
-            y2 = y1 + math.sin(angle) * length
+                x2 = x1 + math.cos(angle) * length
+                y2 = y1 + math.sin(angle) * length
 
-            vein_color = (35, 14, 20)
-            pygame.draw.line(surface, vein_color, (x1, y1), (x2, y2), 3)
+                vein_color = (30, 12, 18)
+                pygame.draw.line(surface, vein_color, (x1, y1), (x2, y2), 2)
 
         # Reset random seed
         random.seed()
@@ -99,13 +132,13 @@ class BackgroundRenderer:
         return surface
 
     def update(self, obj):
-        """Objenin kendini güncellemeye gerek yok."""
+        """Güncelleme gerek yok."""
         pass
 
     def draw(self, obj):
         """
-        Ekranın 4 köşesini hesapla, her biri için doğru chunk'ı çiz.
-        Camera transform UYGULAMADAN doğrudan çiz.
+        Her parallax layer'ı çiz.
+        Her layer kendi chunk boyutunda, ekranı dolduracak kadar chunk çizer.
         """
         screen = Screen()
 
@@ -117,46 +150,47 @@ class BackgroundRenderer:
         except:
             cam_x, cam_y = 0, 0
 
-        # Ekranın 4 köşesinin dünya koordinatlarını hesapla
-        # Ekranın sol üst köşesinin dünya koordinatı = camera pozisyonu
-        screen_tl_world_x = cam_x
-        screen_tl_world_y = cam_y
+        # Her layer'ı çiz (arkadan öne)
+        for layer_data in self.layer_surfaces:
+            surfaces = layer_data["surfaces"]
+            chunk_w = layer_data["chunk_w"]
+            chunk_h = layer_data["chunk_h"]
+            parallax_factor = layer_data["factor"]
 
-        # Ekranın 4 köşesi (dünya koordinatlarında)
-        corners = [
-            (screen_tl_world_x, screen_tl_world_y),                           # Sol üst
-            (screen_tl_world_x + self.chunk_w, screen_tl_world_y),           # Sağ üst
-            (screen_tl_world_x, screen_tl_world_y + self.chunk_h),           # Sol alt
-            (screen_tl_world_x + self.chunk_w, screen_tl_world_y + self.chunk_h)  # Sağ alt
-        ]
+            # Parallax world offset
+            # Kamera sağa gittikçe, layer parallax factor kadar "geride" kalır
+            world_offset_x = cam_x * parallax_factor
+            world_offset_y = cam_y * parallax_factor
 
-        # Her köşe için chunk'ı hesapla ve çiz
-        # Ancak ÇİZİM ekran koordinatlarında olacak (0, 0) sol üstten başlayarak
-        for i, (corner_x, corner_y) in enumerate(corners):
-            # Bu köşe hangi chunk'a ait? (grid indeksi)
-            chunk_index_x = int(corner_x / self.chunk_w)
-            chunk_index_y = int(corner_y / self.chunk_h)
+            # Ekranı kaplayacak chunk aralığını hesapla
+            # Ekranın sol üst ve sağ alt köşelerinin dünya koordinatları
+            screen_tl_world_x = world_offset_x
+            screen_tl_world_y = world_offset_y
+            screen_br_world_x = world_offset_x + self.screen_w
+            screen_br_world_y = world_offset_y + self.screen_h
 
-            # Chunk seed'ini hesapla (chunk pozisyonuna göre)
-            # (chunk_x + chunk_y) % 4 döngüsel olarak 0,1,2,3 verir
-            chunk_seed = (chunk_index_x + chunk_index_y) % 4
+            # Hangi chunk'ların görüneceğini hesapla
+            start_chunk_x = int(screen_tl_world_x / chunk_w)
+            end_chunk_x = int(screen_br_world_x / chunk_w) + 1
+            start_chunk_y = int(screen_tl_world_y / chunk_h)
+            end_chunk_y = int(screen_br_world_y / chunk_h) + 1
 
-            # Chunk görselini al
-            chunk_surface = self.chunk_surfaces[chunk_seed]
+            # Chunk'ları çiz
+            for chunk_x in range(start_chunk_x, end_chunk_x + 1):
+                for chunk_y in range(start_chunk_y, end_chunk_y + 1):
+                    # Chunk seed
+                    chunk_seed = (chunk_x + chunk_y) % 4
 
-            # Çizim pozisyonu - ekranın 4 köşesinde sabit
-            # 0: Sol üst (0, 0)
-            # 1: Sağ üst (chunk_w, 0)
-            # 2: Sol alt (0, chunk_h)
-            # 3: Sağ alt (chunk_w, chunk_h)
-            draw_positions = [
-                (0, 0),
-                (self.chunk_w, 0),
-                (0, self.chunk_h),
-                (self.chunk_w, self.chunk_h)
-            ]
+                    # Chunk yüzeyini al
+                    chunk_surface = surfaces[chunk_seed]
 
-            draw_x, draw_y = draw_positions[i]
+                    # Chunk'ın dünya pozisyonu
+                    world_px = chunk_x * chunk_w
+                    world_py = chunk_y * chunk_h
 
-            # Camera transform UYGULAMA - doğrudan ekrana çiz
-            screen.blit(Image(chunk_surface), draw_x, draw_y)
+                    # Screen koordinatına çevir (world offset'ten çıkar)
+                    screen_x = world_px - world_offset_x
+                    screen_y = world_py - world_offset_y
+
+                    # Çiz (transparan blit)
+                    screen.blit(Image(chunk_surface), screen_x, screen_y)
