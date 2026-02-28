@@ -17,19 +17,27 @@
 
 ---
 
-## Yapılan İşler
+## Component'ler ve Sistemler
 
 ### 1. CellImage Component
 
 **Dosya:** `src/scripts/CellImage.py`
 
-Deforme olabilen jölemsi hücre görseli.
+Deforme olabilen jölemsi hücre görseli. Hücre formuna sahip karakter için görsel render.
 
-**Özellikler:**
+**Temel Özellikler:**
 - 16 noktalı dinamik deformasyon
 - Catmull-Rom spline ile yumuşak eğriler
 - Zaman bazlı "nefes alma" animasyonu (wobble)
+- Hıza bağlı eliptik deformasyon (stretch)
 - Siyah çerçeve (outline)
+
+**Hız Bazlı Eliptik Deformasyon:**
+- Hücre hareket ettiğinde hız yönünde uzar
+- Hıza dik yönde_compress (kısalır)
+- `stretch_max` parametresi ile maksimum stretch oranı
+- Örn: 2.5 → hız 200 iken 2.5x uzama
+- Matematik: Velocity ve perpendicular bileşenlerine ayır, scale et
 
 **Granül Sistemi:**
 - 6 adet hareketli ilaç taneciği
@@ -37,20 +45,29 @@ Deforme olabilen jölemsi hücre görseli.
   - Merkez etrafında rotasyon
   - Mini orbit hareketi
   - Rastgele wobble
-  - Boyat pulse (büyüyüp küçülme)
+  - Boyut pulse (büyüyüp küçülme)
+- Granüller de stretch'ten etkilenir (dışarı taşmayı önlemek için)
 
 **Parametreler:**
 ```python
-__init__(radius=32, color=(255, 180, 80), wobble_speed=2.0, wobble_amount=4.0)
+__init__(radius=32, color=(255, 180, 80), wobble_speed=2.0,
+         wobble_amount=4.0, stretch_max=2.5)
 ```
 
 **Kullanım (JSON):**
 ```json
 {
   "file": "scripts/CellImage",
-  "args": [16, [255, 180, 80], 2, 2]
+  "args": [16, [255, 180, 80], 2, 2, 2.5]
 }
 ```
+
+**Teknik Detaylar:**
+- Surface boyutu: `int(radius * (2 + stretch_max))`
+- Clamp olmaması için yeterince büyük surface
+- Her frame'de wobble ve velocity hesaplanır
+- Catmull-Rom spline: 4 nokta arasında yumuşak enterpolasyon
+- 8 segment per edge (toplam 128 segment)
 
 ---
 
@@ -114,26 +131,26 @@ __init__(acceleration=800, friction=3.0, repulsion_force=600)
 **Çalışma Prensibi:**
 
 1. **Mouse Çekim:**
-   ```
+   ```python
    hedef = mouse_pozisyonu
    yön = normalize(hedef - obje_pozisyonu)
    hız += yön * acceleration * dt
    ```
 
 2. **Sürtünme:**
-   ```
+   ```python
    hız *= (1 - friction * dt)
    ```
 
 3. **Çarpışma İtme:**
-   ```
+   ```python
    overlap = (r1 + r2) - mesafe
    itme_gücü = overlap * repulsion_force
    hız += yön * itme_gücü * dt
    ```
 
 4. **Pozisyon Güncelle:**
-   ```
+   ```python
    pozisyon += hız * dt
    ```
 
@@ -156,7 +173,8 @@ Mouse ile hareket kontrolü.
 **Özellikler:**
 - Sol tık basılıyken Movement.set_target() çağırır
 - Tık bırakınca Movement.clear_target() çağırır
-- InputManager'ın yeni mouse fonksiyonlarını kullanır
+- InputManager'ın mouse fonksiyonlarını kullanır
+- ScreenToWorld dönüşümü (kamera varlığı için)
 
 **InputManager Mouse API:**
 ```python
@@ -166,6 +184,160 @@ im.is_mouse_pressed(1)  # Sol tık
 im.is_mouse_just_pressed(1)
 im.is_mouse_released(1)
 ```
+
+**Kamera Dönüşümü:**
+```python
+# Screen koordinatlarını world koordinatlarına çevir
+from scripts.Camera import Camera
+camera = Camera()
+world_x, world_y = camera.screen_to_world(mouse_x, mouse_y)
+movement.set_target(world_x, world_y)
+```
+
+---
+
+### 5. Camera Component
+
+**Dosya:** `src/scripts/Camera.py`
+
+Singleton kamera sistemi - karakteri takip eder.
+
+**Özellikler:**
+- Singleton pattern (tek实例)
+- Smooth follow (lerp ile yumuşak geçiş)
+- Character centering (karakter ekranın ortasında)
+- World ↔ Screen koordinat dönüşümleri
+
+**Parametreler:**
+```python
+follow_lerp = 5.0  # Takip hızı (saniye)
+```
+
+**Metodlar:**
+- `update(dt)` - Her frame güncelle
+- `get_offset()` → (x, y) kamera ofseti
+- `world_to_screen(wx, wy)` → World'den screen'e
+- `screen_to_world(sx, sy)` → Screen'den world'e
+- `set_target(object)` - Takip edilecek obje
+
+**Merkezleme Mantığı:**
+```python
+screen_center_x = scene.width / 2
+screen_center_y = scene.height / 2
+
+# Hedef kamera pozisyonu (karakter ekranın ortasında)
+target_x = character.x - screen_center_x
+target_y = character.y - screen_center_y
+
+# Lerp ile yumuşak geçiş
+self.x += (target_x - self.x) * self.follow_lerp * dt
+self.y += (target_y - self.y) * self.follow_lerp * dt
+```
+
+**Koordinat Dönüşümleri:**
+- `world_to_screen`: world_pos - camera_offset
+- `screen_to_world`: screen_pos + camera_offset
+
+---
+
+### 6. CameraManager Component
+
+**Dosya:** `src/scripts/CameraManager.py`
+
+Kamerayı güncelleyen manager component.
+
+**Parametreler:**
+```python
+__init__(target_tag="hero")  # Takip edilecek obje tag'i
+```
+
+**Çalışma:**
+- Her frame'de Camera.update(dt) çağırır
+- Tag ile obje bulur: `scene.get_objects_by_tag(target_tag)`
+- İlk objeyi kamera hedefi yapar
+
+**Kullanım (JSON):**
+```json
+{
+  "file": "scripts/CameraManager",
+  "args": ["hero"]  // Tag
+}
+```
+
+---
+
+### 7. BackgroundRenderer Component (Parallax)
+
+**Dosya:** `src/scripts/BackgroundRenderer.py`
+
+Sonsuz parallax arkaplan sistemi - kan damarı teması.
+
+**Parallax Sistemi:**
+- 3 layer: Back (uzak), Middle (orta), Front (yakın)
+- Her layer farklı chunk boyutunda ve parallax faktöründe
+- Chunk'lar tiled olarak tekrarlanır (seamless geçiş)
+- Hücreler wrap-around ile chunk sınırlarından taşmaz
+
+**Layer Parametreleri:**
+```python
+self.parallax_layers = [
+    {"factor": 0.15, "chunk_mult": 2.0, "name": "back"},    # Uzak - büyük chunk
+    {"factor": 0.35, "chunk_mult": 1.0, "name": "middle"},  # Orta
+    {"factor": 0.60, "chunk_mult": 0.5, "name": "front"}    # Yakın - küçük chunk
+]
+```
+
+**Parallax Mantığı:**
+- `factor` ne kadar küçükse, o kadar yavaş kayar = uzak
+- `chunk_mult` ne kadar küçükse, chunk o kadar küçüktür
+- Örn: Back layer → 2.0x chunk → yavaş hareket
+
+**Hücre Dağılımı:**
+- Grid tabanlı (80x80 grid hücreleri)
+- Her grid hücresinde %40 ihtimalle hücre
+- Uniform dağılım (bir yere yığılma yok)
+- Chunk kenarından padding ile uzak (wrap-around için)
+
+**Wrap-Around Seamless Geçiş:**
+- Hücre chunk sınırından taşarsa diğer taraftan devam eder
+- Komşu tile'lara da aynı hücre çizilir
+- Bounding box kontrolü ile optimizasyon
+
+**Renk Derinliği:**
+- Uzak layer → koyu (lower brightness)
+- Yakın layer → açık (higher brightness)
+- Formül: `base_brightness = 55 + int(parallax_factor * 40)`
+
+**Seamless Geçiş Tekniği:**
+```python
+# Her hücre için 9 tile'a çiz (merkez + 8 komşu)
+for dx in [-1, 0, 1]:
+    for dy in [-1, 0, 1]:
+        offset_points = [(px + dx*chunk_w, py + dy*chunk_h) for px, py in points]
+        # Sadece görünecek tile'ları çiz
+```
+
+**Chunk Sistemi:**
+- Ekranı dolduracak kadar chunk hesaplanır
+- Start/end chunk aralığı dinamik
+- Her chunk aynı pattern'i kullanır (seed sabit)
+- 4'ten fazla chunk gerekebilir (özellikle küçük chunk'lar için)
+
+**Kullanım (JSON):**
+```json
+{
+  "file": "scripts/BackgroundRenderer",
+  "args": [960, 480]  // screen_w, screen_h (chunk boyutları için)
+}
+```
+
+**Teknik Detaylar:**
+- Transparan surface'ler (SRCALPHA)
+- Pre-render edilmiş chunk yüzeyleri
+- Performans için ekran sınırları kontrolü
+- Grid spacing: 80px
+- Padding: 15px (chunk kenarından)
+- Hücre sayısı: chunk alanına orantılı
 
 ---
 
@@ -177,10 +349,13 @@ injected/
 │   ├── main.py                    # Entry point
 │   ├── main_scene.json            # Sahne tanımı
 │   └── scripts/
-│       ├── CellImage.py           # Deforme hücre çizimi
+│       ├── CellImage.py           # Deforme hücre çizimi + stretch
 │       ├── CircleHitbox.py        # Dairesel hitbox
 │       ├── Movement.py            # Yumuşak fizik sistemi
-│       └── PlayerController.py    # Mouse kontrol
+│       ├── PlayerController.py    # Mouse kontrol
+│       ├── Camera.py              # Kamera sistemi (singleton)
+│       ├── CameraManager.py       # Kamera manager
+│       └── BackgroundRenderer.py  # Parallax arkaplan
 ├── .venv/                         # Virtual environment
 ├── DOCUMENTATION.md               # Framework dökümanı
 ├── README.md                      # Proje tanımı
@@ -223,10 +398,13 @@ class MyScript:
 **Çalışan Özellikler:**
 - ✅ Deforme hücre görseli
 - ✅ İçinde hareketli granüller
+- ✅ Hız bazlı eliptik deformasyon (stretch)
 - ✅ Dairesel hitbox
 - ✅ Yumuşak fizik sistemi
 - ✅ Mouse ile hareket
 - ✅ Yay benzeri çarpışma
+- ✅ Kamera sistemi (smooth follow)
+- ✅ Parallax arkaplan (3 layer, seamless)
 
 **Test Edilebilir:**
 ```bash
@@ -236,61 +414,14 @@ PYTHONPATH=.venv/lib/python3.13/site-packages:src/scripts python src/main.py
 **Kontroller:**
 - Sol mouse tık basılı tut - Hedefe doğru hareket et
 - Tık bırak - Sürtünme ile yavaşla
+- Hareket ederken hücre stretch (uzama) efekti
 
----
-
-## Gelecek Planlar
-
-### Kısa Vadede
-
-1. **Ateş Sistemi**
-   - Granül fırlatma
-   - Mermi script'i
-   - Cooldown
-
-2. **Düşmanlar**
-   - Bakteri (temel düşman)
-   - Mutant patojen (mini boss)
-   - AI hareket script'i
-
-3. **Saha Efektleri**
-   - Kan damarı arka planı
-   - Alyuvarlar (çevresel)
-   - Partikül efektleri
-
-### Orta Vadede
-
-4. **İlaç Sistemi**
-   - Granül kapasite göstergesi
-   - Yenileme pickup'ları
-   - Burst yeteneği (tüm granülleri aynı anda)
-
-5. **Akyuvarlar**
-   - Oyuncuyu kovalayan AI
-   - Çarpışma hasarı
-
-6. **UI/Arayüz**
-   - Can barı
-   - İlaç kapasitesi (görsel)
-   - Minimap veya vücut silüeti
-
-### Uzun Vadede (Opsiyonel)
-
-7. **Boss Savaşları**
-   - Büyük mutasyon
-   - Farklı fazlar
-   - Burst mekaniği
-
-8. **Lenf/Bağışıklık Bölgesi**
-   - İkinci biyom
-   - Daha agresif düşmanlar
-   - Farklı ortam
-
-9. **Polish**
-   - Ses efektleri
-   - Vignette efekt
-   - Chromatic aberration
-   - Daha fazla partikül
+**Görsel Özellikler:**
+- Kan damarı teması (koyu kırmızı arkaplan)
+- Parallax depth (uzak = koyu, yakın = açık)
+- Organik hücre hareketleri
+- Smooth kamera takibi
+- Seamless sonsuz arkaplan
 
 ---
 
@@ -323,73 +454,109 @@ PYTHONPATH=.venv/lib/python3.13/site-packages:src/scripts python src/main.py
 - Top-down shooter için standart
 - WASD + kombinasyonu da mümkün (ileride)
 
+### Neden Parallax Arkaplan?
+
+- 3D derinlik hissi
+- Kan damarı içindeymiş gibi atmosfer
+- Performanslı (chunk sistemi + cache)
+- Sonsuz dünya hissi
+
+### Neden Wrap-Around Seamless?
+
+- Chunk kenarlarında kesik görünümü önler
+- Hücreler düzgün geçiş yapar
+- Daha organik his
+- Tekrar pattern'i belirgin değildir
+
 ---
 
 ## Performans Notları
 
 **Şu An:**
-- 2 obje, 6 granül, 16 deformasyon noktası
+- 3 parallax layer
+- Her layer için 4+ chunk çizimi
 - ~60 FPS (320x180 çözünürlük)
 
-**Tahmini (Düşmanlar Eklendiğinde):**
-- 10-20 obje
-- 50-100 mermi
-- 100-200 partikül
-- Hala 60 FPS (basit çizim + O(1) çarpışma)
+**Optimizasyonlar:**
+- Pre-render chunk surfaces
+- Ekran sınırları kontrolü
+- Wrap-around için sadece 9 tile
+- Grid tabanlı uniform dağılım
 
-**Optimizasyon Gerekiyorsa:**
-- Spatial hashing (çok obje olursa)
-- Object pooling (mermi/partikül)
-- Daha az granül (6 → 3-4)
+**Gelecek Optimizasyonlar (gerekirse):**
+- Layer sayısını azaltmak (3 → 2)
+- Chunk boyutunu artırmak
+- Daha az hücre sayısı
 
 ---
 
-## GDD Kapsam Özeti
+## Geliştirme Sürecindeki Sorunlar ve Çözümler
 
-**Oyun Döngüsü:**
-```
-Spawn → Hareket et → Düşman bul → Ateş et → Granül harca
-                                              ↓
-                                        Yağla/Kaç → İlaç al → Tekrar
-```
+### Sorun 1: Surface Clipping
+**Sorun:** Hücre stretch olduğunda surface sınırlarını aşıyordu, kesik görünüyordu.
 
-**İlerleme:**
-```
-Bölüm 1: Kan Damarı (20-30 dk)
-├── Tutorial
-├── Bakteri grupları
-├── İlaç pickup
-└── Mini-boss
+**Çözüm:** Surface boyutunu `radius * (2 + stretch_max)` formülüyle hesapladık.
 
-Bölüm 2: Lenf (opsiyonel)
-├── Akyuvar spawnları
-├── Daha zor kombinasyonlar
-└── Boss
-```
+### Sorun 2: Double Rendering
+**Sorun:** Wrap-around'da hücreler chunk sınırında iki kere çiziliyordu, garip köşeler oluşuyordu.
 
-**Zaman Yönetimi (48 Saat):**
+**Çözüm:** Padding ekledik - hücreleri chunk kenarından uzakta tuttuk (15px).
 
-| Yapılan | Süre |
-|---------|------|
-| Framework kurulumu | 2 saat |
-| CellImage + Granüller | 4 saat |
-| CircleHitbox | 1 saat |
-| Movement + Fizik | 3 saat |
-| PlayerController | 1 saat |
-| **Toplam** | **11 saat** |
+### Sorun 3: Seyrek Dağılım
+**Sorun:** Chunk boyutu artınca hücreler seyrek dağılıyordu.
 
-| Yapılacak | Tahmini |
-|----------|---------|
-| Ateş sistemi | 4 saat |
-| Düşmanlar | 6 saat |
-| Çevresel objeler | 3 saat |
-| UI | 2 saat |
-| Boss | 4 saat |
-| Polish | 6 saat |
-| Test & Debug | 4 saat |
-| **Toplam** | **29 saat** |
+**Çözüm:** Grid tabanlı uniform dağılım - her 80x80 grid hücresinde %40 ihtimalle hücre.
 
-**Toplam:** 40 saat (buffer dahil)
+### Sorun 4: Ters Renk Derinliği
+**Sorun:** Uzak layer açık, yakın layer koyu görünüyordu (ters).
+
+**Çözüm:** `base_brightness = 55 + int(parallax_factor * 40)` formülü ile düzelttik.
+
+### Sorun 5: Camera Transform Uygulaması
+**Sorun:** Arkaplan kamerayla birlikte hareket ediyordu (parallax yokmuş gibi).
+
+**Çözüm:** Her layer için ayrı parallax offset hesapladık, dünya koordinatlarına göre çizdik.
+
+---
+
+## Gelecek Planlar
+
+### Kısa Vadede
+
+1. **Ateş Sistemi**
+   - Granül fırlatma
+   - Mermi script'i
+   - Cooldown
+
+2. **Düşmanlar**
+   - Bakteri (temel düşman)
+   - Mutant patojen (mini boss)
+   - AI hareket script'i
+
+3. **Saha Efektleri**
+   - Partikül efektleri
+   - Kan damarı detayları
+
+### Orta Vadede
+
+4. **İlaç Sistemi**
+   - Granül kapasite göstergesi
+   - Yenileme pickup'ları
+   - Burst yeteneği
+
+5. **Akyuvarlar**
+   - Oyuncuyu kovalayan AI
+   - Çarpışma hasarı
+
+6. **UI/Arayüz**
+   - Can barı
+   - İlaç kapasitesi
+
+### Uzun Vadede (Opsiyonel)
+
+7. **Boss Savaşları**
+8. **Lenf/Bağışıklık Bölgesi**
+9. **Polish** (Ses, efektler)
 
 ---
 
@@ -404,7 +571,7 @@ Bölüm 2: Lenf (opsiyonel)
 **İsimlendirme:**
 - Component sınıfları: `PascalCase`
 - Fonksiyonlar: `snake_case`
-- JSON dosyaları: `kebab-case.json` (main_scene.json)
+- JSON dosyaları: `kebab-case.json`
 
 ---
 
@@ -413,25 +580,8 @@ Bölüm 2: Lenf (opsiyonel)
 **Yeni Component Oluşturma:**
 
 1. `src/scripts/MyComponent.py` oluştur
-2. Sınıf yaz:
-   ```python
-   class MyComponent:
-       def __init__(self, arg1):
-           self.arg1 = arg1
-
-       def update(self, obj):
-           pass
-
-       def draw(self, obj):
-           pass
-   ```
-3. JSON'da kullan:
-   ```json
-   {
-     "file": "scripts/MyComponent",
-     "args": [42]
-   }
-   ```
+2. Sınıf yaz
+3. JSON'da kullan
 
 **Objeye Erişme:**
 ```python
@@ -444,13 +594,7 @@ objs = scene.get_objects_by_tag("enemy")
 ```python
 movement = obj.get_component("Movement")
 hitbox = obj.get_component("CircleHitbox")
-```
-
-**Scene Tags:**
-```python
-obj.add_tag("hero")
-obj.has_tag("hero")  # True/False
-obj.remove_tag("hero")
+camera = Camera()  # Singleton
 ```
 
 ---
