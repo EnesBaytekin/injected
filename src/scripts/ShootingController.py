@@ -57,21 +57,49 @@ class ShootingController:
                 dir_x = movement.vel_x / speed
                 dir_y = movement.vel_y / speed
 
-        # Joystick kontrolü (shoulder button)
+        # Joystick kontrolü (shoulder button veya right trigger)
         should_fire = False
-        if self.joystick and self.shoulder_button is not None:
-            trigger_pressed = self.joystick.get_button(self.shoulder_button)
-            trigger_just_pressed = trigger_pressed and not self.last_trigger_state
-            self.last_trigger_state = trigger_pressed
+        if self.joystick:
+            if self.shoulder_button is not None:
+                # Bölünmüş hücre - shoulder button kullan, ateş yönü = hareket yönü
+                trigger_pressed = self.joystick.get_button(self.shoulder_button)
+                trigger_just_pressed = trigger_pressed and not self.last_trigger_state
+                self.last_trigger_state = trigger_pressed
 
-            if trigger_just_pressed and dir_x is not None and dir_y is not None:
-                should_fire = True
+                if trigger_just_pressed:
+                    should_fire = True
+                    # Hareket etmiyorsa varsayılan yön (sağ)
+                    if dir_x is None:
+                        dir_x = 1.0
+                        dir_y = 0.0
+            else:
+                # Ana hücre - right trigger (button 5) kullan
+                trigger_pressed = self.joystick.get_button(5)
+                trigger_just_pressed = trigger_pressed and not self.last_trigger_state
+                self.last_trigger_state = trigger_pressed
+
+                if trigger_just_pressed:
+                    should_fire = True
+                    # Ateş yönü = PlayerController'dan aim direction (right thumbstick)
+                    player_controller = obj.get_component("PlayerController")
+                    if player_controller and hasattr(player_controller, 'joystick_aim_x'):
+                        aim_x = player_controller.joystick_aim_x
+                        aim_y = player_controller.joystick_aim_y
+                        # Aim direction varsa kullan
+                        if aim_x != 0 or aim_y != 0:
+                            dir_x = aim_x
+                            dir_y = aim_y
+                    # Yoksa varsayılan yön (sağ)
+                    if dir_x is None:
+                        dir_x = 1.0
+                        dir_y = 0.0
 
         # Mouse kontrolü (fallback - shoulder button yoksa)
         if not should_fire and self.shoulder_button is None:
             im = InputManager()
             # Sol tık kontrolü - just pressed ile tek seferlik
             if im.is_mouse_just_pressed(1):
+                should_fire = True
                 # Mouse pozisyonunu al
                 mouse_x, mouse_y = im.get_mouse_position()
 
@@ -92,7 +120,10 @@ class ShootingController:
                     # Normalize yön
                     dir_x = dx / distance
                     dir_y = dy / distance
-                    should_fire = True
+                else:
+                    # Mouse üstündeyse varsayılan yön
+                    dir_x = 1.0
+                    dir_y = 0.0
 
         # Ateş et
         if should_fire and dir_x is not None and dir_y is not None:
