@@ -40,6 +40,10 @@
         {
           "file": "scripts/ShootingController",
           "args": [200, 0.3]
+        },
+        {
+          "file": "scripts/SplitController",
+          "args": []
         }
       ]
     },

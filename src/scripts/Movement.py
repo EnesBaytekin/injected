@@ -12,20 +12,32 @@ class Movement:
     Mouse ile hedefe doğru çekim, çarpışmalarda yay gibi itme.
     """
 
-    def __init__(self, acceleration=800, friction=3.0, repulsion_force=600):
+    def __init__(self, acceleration=800, friction=3.0, repulsion_force=600, joystick_thumb=None):
         """
         Args:
             acceleration: İvme gücü (piksel/saniye²)
             friction: Sürtünme katsayısı (hız azalma oranı)
             repulsion_force: Çarpışma itme kuvveti
+            joystick_thumb: "left", "right" veya None (mouse kontrolü)
         """
         self.acceleration = acceleration
         self.friction = friction
         self.repulsion_force = repulsion_force
+        self.joystick_thumb = joystick_thumb
 
         # Fizik durumu
         self.vel_x = 0.0
         self.vel_y = 0.0
+
+        # Joystick
+        self.joystick = None
+        try:
+            pygame.joystick.init()
+            if pygame.joystick.get_count() > 0:
+                self.joystick = pygame.joystick.Joystick(0)
+                self.joystick.init()
+        except:
+            pass
 
         # Mouse hedefi
         self.target_x = None
@@ -48,8 +60,29 @@ class Movement:
         """
         app = App()
 
-        # 1. Mouse hedefine doğru çekim kuvveti
-        if self.target_x is not None and self.target_y is not None:
+        # 1. Joystick kontrolü (eğer atanmışsa)
+        if self.joystick_thumb and self.joystick:
+            deadzone = 0.2
+
+            if self.joystick_thumb == "left":
+                # Sol thumbstick (axis 0, 1)
+                thumb_x = self.joystick.get_axis(0)
+                thumb_y = self.joystick.get_axis(1)
+            elif self.joystick_thumb == "right":
+                # Sağ thumbstick (axis 3, 4)
+                thumb_x = self.joystick.get_axis(3)
+                thumb_y = self.joystick.get_axis(4)
+            else:
+                thumb_x = thumb_y = 0
+
+            # Deadzone kontrolü
+            if abs(thumb_x) > deadzone or abs(thumb_y) > deadzone:
+                # Joystick ile hareket et
+                self.vel_x += thumb_x * self.acceleration * app.dt
+                self.vel_y += thumb_y * self.acceleration * app.dt
+
+        # 2. Mouse hedefine doğru çekim kuvveti (joystick yoksa)
+        if self.target_x is not None and self.target_y is not None and not self.joystick_thumb:
             dx = self.target_x - obj.x
             dy = self.target_y - obj.y
             distance = (dx * dx + dy * dy) ** 0.5

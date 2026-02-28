@@ -13,15 +13,17 @@ class ShootingController:
     Mouse yönüne veya Joystick sağ thumbstick yönüne granül mermisi spawnlar.
     """
 
-    def __init__(self, bullet_speed=400, cooldown=0.3):
+    def __init__(self, bullet_speed=400, cooldown=0.3, shoulder_button=None):
         """
         Args:
             bullet_speed: Mermi hızı (piksel/saniye)
             cooldown: Ateş arası bekleme süresi (saniye)
+            shoulder_button: 4 (sol) veya 5 (sağ) - None ise trigger/mouse kullan
         """
         self.bullet_speed = bullet_speed
         self.cooldown = cooldown
         self.last_shot_time = 0
+        self.shoulder_button = shoulder_button
 
         # Joystick initialization
         self.joystick = None
@@ -43,26 +45,30 @@ class ShootingController:
         if app.now - self.last_shot_time < self.cooldown:
             return
 
-        # Ateş yönü
+        # Ateş yönü - hareket yönü
         dir_x = None
         dir_y = None
 
-        # Joystick kontrolü
-        if self.joystick:
-            # Right trigger (button 5) - "just pressed" mantığı
-            trigger_pressed = self.joystick.get_button(5)
+        # Movement component'ten yön al
+        movement = obj.get_component("Movement")
+        if movement:
+            speed = (movement.vel_x ** 2 + movement.vel_y ** 2) ** 0.5
+            if speed > 1:  # Hareket ediyorsa
+                dir_x = movement.vel_x / speed
+                dir_y = movement.vel_y / speed
+
+        # Joystick kontrolü (shoulder button)
+        should_fire = False
+        if self.joystick and self.shoulder_button is not None:
+            trigger_pressed = self.joystick.get_button(self.shoulder_button)
             trigger_just_pressed = trigger_pressed and not self.last_trigger_state
             self.last_trigger_state = trigger_pressed
 
-            if trigger_just_pressed:
-                # PlayerController'dan aim direction al
-                player_controller = obj.get_component("PlayerController")
-                if player_controller:
-                    dir_x = player_controller.joystick_aim_x
-                    dir_y = player_controller.joystick_aim_y
+            if trigger_just_pressed and dir_x is not None and dir_y is not None:
+                should_fire = True
 
-        # Mouse kontrolü (fallback)
-        if dir_x is None:
+        # Mouse kontrolü (fallback - shoulder button yoksa)
+        if not should_fire and self.shoulder_button is None:
             im = InputManager()
             # Sol tık kontrolü - just pressed ile tek seferlik
             if im.is_mouse_just_pressed(1):
@@ -86,9 +92,10 @@ class ShootingController:
                     # Normalize yön
                     dir_x = dx / distance
                     dir_y = dy / distance
+                    should_fire = True
 
         # Ateş et
-        if dir_x is not None and dir_y is not None:
+        if should_fire and dir_x is not None and dir_y is not None:
             # Mermi spawnla (obj = owner)
             self._spawn_bullet(scene, obj.x, obj.y, dir_x, dir_y, obj)
 
