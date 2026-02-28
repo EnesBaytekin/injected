@@ -4,6 +4,18 @@
   "background_color": "#2a2a3a",
   "objects": [
     {
+      "x": 0,
+      "y": 0,
+      "name": "background_renderer",
+      "tags": ["background"],
+      "components": [
+        {
+          "file": "scripts/BackgroundRenderer",
+          "args": [320, 180]
+        }
+      ]
+    },
+    {
       "x": 160,
       "y": 90,
       "name": "player",
