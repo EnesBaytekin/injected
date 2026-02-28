@@ -165,7 +165,7 @@ class CellImage:
                 bullet_obj.kill()
 
         # Tonla beyaz particle patlaması - dağınık
-        particle_count = 100
+        particle_count = 200
         particle_obj = Object(obj.x, obj.y, depth=1000)
 
         effect = ParticleEffect(
@@ -174,7 +174,7 @@ class CellImage:
             color=((255, 255, 255), (200, 200, 200)),  # Beyaz -> gri
             lifetime=(0.5, 1.5),
             size=(1, 2),
-            velocity=((-150, 150), (-150, 150)),  # Her yöne farklı hızlarda - dağınık
+            velocity=(10, 200),  # Speed range: 10-100, küçükler daha fazla (merkezde yoğun)
             acceleration=(0, 100),  # Yerçekimi ile aşağı düşsün
             spawn_mode="burst",
             one_shot=True,

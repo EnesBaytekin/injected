@@ -103,15 +103,26 @@ class ParticleEffect:
     def _get_velocity(self):
         """
         Hız range'inden rastgele hız al.
-        Spread açısına göre hız vektörünü döndür.
+        Polar koordinatla (açı + hız) - doğal dairesel dağılım.
+        Küçük hızlar daha fazla, büyükler daha az (merkezde yoğunlaşmak için).
         """
-        vx_range = (0, 0)
-        vy_range = (0, 0)
-
         if isinstance(self.velocity, tuple) and len(self.velocity) == 2:
-            vx_range, vy_range = self.velocity
-            vx = random.uniform(vx_range[0], vx_range[1])
-            vy = random.uniform(vy_range[0], vy_range[1])
+            # Speed range
+            speed_min, speed_max = self.velocity
+
+            # Küçük hızların daha fazla olması için random()^2 kullan
+            # Bu 0-1 arası verir ama 0'a yakın değerleri daha fazla üretir
+            t = random.random()
+            biased_t = t * t  # Küçük değerleri daha fazla
+
+            speed = speed_min + (speed_max - speed_min) * biased_t
+
+            # Rastgele açı (0-360) - dairesel uniform dağılım
+            angle = random.uniform(0, 360)
+
+            rad = math.radians(angle)
+            vx = math.cos(rad) * speed
+            vy = math.sin(rad) * speed
         else:
             speed = self.velocity
             angle = random.uniform(0, 360)
