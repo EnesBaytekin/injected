@@ -1,0 +1,10 @@
+{
+  "name": "granule_bullet",
+  "tags": ["bullet"],
+  "components": [
+    {
+      "file": "scripts/GranuleBullet",
+      "args": []
+    }
+  ]
+}
