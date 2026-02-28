@@ -164,7 +164,7 @@ class CellImage:
             if bullet_obj and not bullet_obj.dead:
                 bullet_obj.kill()
 
-        # Tonla beyaz particle patlaması
+        # Tonla beyaz particle patlaması - dağınık
         particle_count = 100
         particle_obj = Object(obj.x, obj.y, depth=1000)
 
@@ -174,12 +174,12 @@ class CellImage:
             color=((255, 255, 255), (200, 200, 200)),  # Beyaz -> gri
             lifetime=(0.5, 1.5),
             size=(1, 2),
-            velocity=150,
-            acceleration=(0, 0),
+            velocity=((-150, 150), (-150, 150)),  # Her yöne farklı hızlarda - dağınık
+            acceleration=(0, 100),  # Yerçekimi ile aşağı düşsün
             spawn_mode="burst",
             one_shot=True,
             fade_out=True,
-            friction=0.5,
+            friction=1.5,  # Yavaşla çöksün
             spread=360
         )
 
