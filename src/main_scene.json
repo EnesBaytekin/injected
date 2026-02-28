@@ -1,7 +1,7 @@
 {
   "width": 320,
   "height": 180,
-  "background_color": "#2a2a3a",
+  "background_color": "#2a1010",
   "objects": [
     {
       "x": 0,
@@ -11,7 +11,7 @@
       "components": [
         {
           "file": "scripts/BackgroundRenderer",
-          "args": [320, 180]
+          "args": [960, 480]
         }
       ]
     },
