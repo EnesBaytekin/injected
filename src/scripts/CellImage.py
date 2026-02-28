@@ -159,38 +159,101 @@ class CellImage:
         from pygaminal import App, Object
         from scripts.ParticleEffect import ParticleEffect
 
-        # İçindeki bullet'ları da yok et
+        # İçindeki bullet'ların pozisyonlarını al (kendi patlamaları için)
+        bullet_positions = []
         for bullet_obj in self.swallowed_bullets:
             if bullet_obj and not bullet_obj.dead:
+                bullet_positions.append((bullet_obj.x, bullet_obj.y))
                 bullet_obj.kill()
 
-        # Tonla beyaz particle patlaması - dağınık
-        particle_count = 200
-        particle_obj = Object(obj.x, obj.y, depth=1000)
+        # Ana patlama - çok sayıda çeşitli particle
+        scene = App().get_current_scene()
 
-        effect = ParticleEffect(
-            particle_count=particle_count,
+        # 1. Küçük pixel particle'lar (toz) - 400 adet
+        particle_obj1 = Object(obj.x, obj.y, depth=1000)
+        effect1 = ParticleEffect(
+            particle_count=400,
             shape=ParticleEffect.SHAPE_PIXEL,
-            color=((255, 255, 255), (200, 200, 200)),  # Beyaz -> gri
-            lifetime=(0.5, 1.5),
-            size=(1, 2),
-            velocity=(10, 200),  # Speed range: 10-100, küçükler daha fazla (merkezde yoğun)
-            acceleration=(0, 100),  # Yerçekimi ile aşağı düşsün
+            color=((255, 255, 255), (220, 220, 220)),  # Beyaz -> açık gri
+            lifetime=(0.3, 1.0),
+            size=(1, 3),
+            velocity=(20, 250),
+            acceleration=(0, 150),
             spawn_mode="burst",
             one_shot=True,
             fade_out=True,
-            friction=1.5,  # Yavaşla çöksün
+            friction=2.0,
             spread=360
         )
-
         from pygaminal import ScriptComponent
-        script_comp = ScriptComponent("scripts/ParticleEffect", [])
-        script_comp.instance = effect
-        particle_obj.add_component(script_comp)
+        script_comp1 = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp1.instance = effect1
+        particle_obj1.add_component(script_comp1)
+        scene.add_object(particle_obj1)
 
-        # Sahneye ekle
-        scene = App().get_current_scene()
-        scene.add_object(particle_obj)
+        # 2. Küçülen daireler - 50 adet (büyük parçalar)
+        particle_obj2 = Object(obj.x, obj.y, depth=999)
+        effect2 = ParticleEffect(
+            particle_count=50,
+            shape=ParticleEffect.SHAPE_SHRINKING_CIRCLE,
+            color=((255, 255, 255), (240, 240, 240)),
+            lifetime=(0.5, 1.2),
+            size=(3, 8),
+            velocity=(30, 180),
+            acceleration=(0, 80),
+            spawn_mode="burst",
+            one_shot=True,
+            fade_out=True,
+            friction=1.0,
+            spread=360
+        )
+        script_comp2 = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp2.instance = effect2
+        particle_obj2.add_component(script_comp2)
+        scene.add_object(particle_obj2)
+
+        # 3. Normal daireler - 30 adet (orta boy parçalar)
+        particle_obj3 = Object(obj.x, obj.y, depth=998)
+        effect3 = ParticleEffect(
+            particle_count=30,
+            shape=ParticleEffect.SHAPE_CIRCLE,
+            color=((255, 255, 255), (200, 200, 200)),
+            lifetime=(0.6, 1.5),
+            size=(2, 5),
+            velocity=(50, 200),
+            acceleration=(0, 100),
+            spawn_mode="burst",
+            one_shot=True,
+            fade_out=True,
+            friction=1.5,
+            spread=360
+        )
+        script_comp3 = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp3.instance = effect3
+        particle_obj3.add_component(script_comp3)
+        scene.add_object(particle_obj3)
+
+        # 4. İçindeki bullet'ların her biri için mini patlamalar
+        for bx, by in bullet_positions:
+            bullet_particle = Object(bx, by, depth=1000)
+            bullet_effect = ParticleEffect(
+                particle_count=20,
+                shape=ParticleEffect.SHAPE_SHRINKING_CIRCLE,
+                color=((255, 235, 180), (200, 180, 140)),  # Sarı tonları
+                lifetime=(0.2, 0.6),
+                size=(2, 4),
+                velocity=(15, 60),
+                acceleration=(0, 50),
+                spawn_mode="burst",
+                one_shot=True,
+                fade_out=True,
+                friction=2.5,
+                spread=360
+            )
+            bullet_script = ScriptComponent("scripts/ParticleEffect", [])
+            bullet_script.instance = bullet_effect
+            bullet_particle.add_component(bullet_script)
+            scene.add_object(bullet_particle)
 
         # Hücreyi yok et
         obj.kill()
