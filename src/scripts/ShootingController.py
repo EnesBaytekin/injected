@@ -1,6 +1,6 @@
 """
-Shooting Controller - Sağ tık ile granül fırlatma.
-Mouse yönüne doğru granül spawn eder.
+Shooting Controller - Mouse ve Joystick ile granül fırlatma.
+Mouse sol tık veya Joystick A tuşu ile ateş eder.
 """
 from pygaminal import App, Screen, InputManager, Object
 import pygame
@@ -9,8 +9,8 @@ import math
 
 class ShootingController:
     """
-    Sağ mouse tık ile ateş eder.
-    Mouse yönüne doğru granül mermisi spawnlar.
+    Mouse sol tık ve Joystick A tuşu ile ateş eder.
+    Mouse yönüne veya Joystick sağ thumbstick yönüne granül mermisi spawnlar.
     """
 
     def __init__(self, bullet_speed=400, cooldown=0.3):
@@ -23,6 +23,16 @@ class ShootingController:
         self.cooldown = cooldown
         self.last_shot_time = 0
 
+        # Joystick initialization
+        self.joystick = None
+        try:
+            pygame.joystick.init()
+            if pygame.joystick.get_count() > 0:
+                self.joystick = pygame.joystick.Joystick(0)
+                self.joystick.init()
+        except:
+            pass
+
     def update(self, obj):
         """Her frame ateş kontrolü yap."""
         app = App()
@@ -32,11 +42,25 @@ class ShootingController:
         if app.now - self.last_shot_time < self.cooldown:
             return
 
-        # Input kontrolü
-        try:
-            im = InputManager()
+        # Ateş yönü
+        dir_x = None
+        dir_y = None
 
-            # Sağ tık kontrolü - just pressed ile tek seferlik
+        # Joystick kontrolü
+        if self.joystick:
+            # Right trigger (axis 5) - 0.5'den büyükse ateş et
+            trigger_value = self.joystick.get_button(5)
+            if trigger_value > 0.5:
+                # PlayerController'dan aim direction al
+                player_controller = obj.get_component("PlayerController")
+                if player_controller:
+                    dir_x = player_controller.joystick_aim_x
+                    dir_y = player_controller.joystick_aim_y
+
+        # Mouse kontrolü (fallback)
+        if dir_x is None:
+            im = InputManager()
+            # Sol tık kontrolü - just pressed ile tek seferlik
             if im.is_mouse_just_pressed(1):
                 # Mouse pozisyonunu al
                 mouse_x, mouse_y = im.get_mouse_position()
@@ -59,13 +83,13 @@ class ShootingController:
                     dir_x = dx / distance
                     dir_y = dy / distance
 
-                    # Mermi spawnla
-                    self._spawn_bullet(scene, obj.x, obj.y, dir_x, dir_y)
+        # Ateş et
+        if dir_x is not None and dir_y is not None:
+            # Mermi spawnla
+            self._spawn_bullet(scene, obj.x, obj.y, dir_x, dir_y)
 
-                    # Cooldown başlat
-                    self.last_shot_time = app.now
-        except Exception as e:
-            raise(e)
+            # Cooldown başlat
+            self.last_shot_time = app.now
 
     def _spawn_bullet(self, scene, x, y, dir_x, dir_y):
         """Yeni mermi objesi spawnla - .obj dosyasından yükler."""
