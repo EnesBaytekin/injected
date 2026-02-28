@@ -50,9 +50,32 @@ class CellImage:
             })
         self.granule_states = []  # Her frame için güncel durumlar
 
+        # Yutulma mekaniiği
+        self.swallowed_bullets = []  # Yutulan bullet objeleri
+        self.capacity = 3  # Kaç bullet yutunca sindirilmeye başlayacak
+        self.is_digesting = False  # Sindiriliyor mu?
+        self.digestion_progress = 0.0  # Sindirme ilerlemesi (0.0 - 1.0)
+        self.tremor_intensity = 0.0  # Titreme şiddeti
+        self.inner_color_progress = 0.0  # İç renk beyazlaşma ilerlemesi
+
     def update(self, obj):
         """Her frame noktaları hafifçe kaydır, granülleri güncelle"""
         app = App()
+
+        # Sindirme animasyonu
+        if self.is_digesting:
+            self.digestion_progress += app.dt * 0.5  # 2 saniyede tamamlanır
+
+            # Titreme şiddeti artar
+            self.tremor_intensity = self.digestion_progress * 5.0  # Maksimum 5px titreme
+
+            # İç renk beyazlaşma ilerlemesi
+            self.inner_color_progress = min(1.0, self.digestion_progress * 1.5)
+
+            # Sindirme bitti mi?
+            if self.digestion_progress >= 1.0:
+                self._explode_and_die(obj)
+                return
 
         # Hücre deformasyonunu güncelle
         new_points = []
@@ -64,8 +87,13 @@ class CellImage:
             # Rastgele mikroskopik hareket
             micro_wobble = math.cos(app.now * self.wobble_speed * 1.7 + phase) * (self.wobble_amount * 0.3)
 
+            # Sindirme titremesi ekle
+            tremor = 0
+            if self.is_digesting:
+                tremor = math.sin(app.now * 20 + phase) * self.tremor_intensity
+
             # Yarıçapı hesapla
-            r = self.radius + wobble + micro_wobble
+            r = self.radius + wobble + micro_wobble + tremor
 
             # Pozisyon
             x = math.cos(angle) * r
@@ -88,13 +116,19 @@ class CellImage:
             wobble_x = math.cos(app.now * 2 + g['wobble_offset']) * 2
             wobble_y = math.sin(app.now * 2.3 + g['wobble_offset']) * 2
 
+            # Sindirme titremesi
+            tremor_x = tremor_y = 0
+            if self.is_digesting:
+                tremor_x = math.sin(app.now * 15 + g['wobble_offset']) * self.tremor_intensity * 0.5
+                tremor_y = math.cos(app.now * 15 + g['wobble_offset']) * self.tremor_intensity * 0.5
+
             # Ana pozisyon
             base_x = math.cos(current_angle) * g['distance']
             base_y = math.sin(current_angle) * g['distance']
 
             # Final pozisyon (tüm offset'ler eklenir)
-            final_x = base_x + orbit_offset_x + wobble_x
-            final_y = base_y + orbit_offset_y + wobble_y
+            final_x = base_x + orbit_offset_x + wobble_x + tremor_x
+            final_y = base_y + orbit_offset_y + wobble_y + tremor_y
 
             # Boyat pulse (büyüyüp küçülme)
             base_radius = max(2, int(self.radius * 0.08))
@@ -106,6 +140,60 @@ class CellImage:
                 'y': final_y,
                 'radius': final_radius
             })
+
+    def swallow_bullet(self, bullet_obj):
+        """Bullet tarafından yutul."""
+        # Bullet'u listeye ekle
+        self.swallowed_bullets.append(bullet_obj)
+
+        # Her bullet yutulduğunda iç renk biraz bozulur
+        self.inner_color_progress += 0.15
+
+        # Capacity doldu mu?
+        if len(self.swallowed_bullets) >= self.capacity and not self.is_digesting:
+            # Sindirmeye başla!
+            self.is_digesting = True
+
+    def _explode_and_die(self, obj):
+        """Sindirme tamamlandı - hücre particle patlamasıyla yok olur."""
+        from pygaminal import App, Object
+        from scripts.ParticleEffect import ParticleEffect
+
+        # İçindeki bullet'ları da yok et
+        for bullet_obj in self.swallowed_bullets:
+            if bullet_obj and not bullet_obj.dead:
+                bullet_obj.kill()
+
+        # Tonla beyaz particle patlaması
+        particle_count = 100
+        particle_obj = Object(obj.x, obj.y, depth=1000)
+
+        effect = ParticleEffect(
+            particle_count=particle_count,
+            shape=ParticleEffect.SHAPE_PIXEL,
+            color=((255, 255, 255), (200, 200, 200)),  # Beyaz -> gri
+            lifetime=(0.5, 1.5),
+            size=(1, 2),
+            velocity=150,
+            acceleration=(0, 0),
+            spawn_mode="burst",
+            one_shot=True,
+            fade_out=True,
+            friction=0.5,
+            spread=360
+        )
+
+        from pygaminal import ScriptComponent
+        script_comp = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp.instance = effect
+        particle_obj.add_component(script_comp)
+
+        # Sahneye ekle
+        scene = App().get_current_scene()
+        scene.add_object(particle_obj)
+
+        # Hücreyi yok et
+        obj.kill()
 
     def _catmull_rom_spline(self, p0, p1, p2, p3, t):
         """Catmull-Rom spline ile yumuşak eğri (4 nokta arası)"""
@@ -202,9 +290,19 @@ class CellImage:
 
         # Doldur (daha yumuşak için anti-aliased polygon)
         if len(curve_points) > 2:
-            pygame.draw.polygon(surface, self.color, curve_points)
+            # İç renk beyazlaşma efekti
+            if self.inner_color_progress > 0:
+                # Original color'dan beyaz'a interpolasyon
+                r = int(self.color[0] + (255 - self.color[0]) * self.inner_color_progress)
+                g = int(self.color[1] + (255 - self.color[1]) * self.inner_color_progress)
+                b = int(self.color[2] + (255 - self.color[2]) * self.inner_color_progress)
+                fill_color = (r, g, b)
+            else:
+                fill_color = self.color
 
-            # Siyah çerçeve (outline)
+            pygame.draw.polygon(surface, fill_color, curve_points)
+
+            # Siyah çerçeve (outline) - her zaman siyah kalır
             pygame.draw.polygon(surface, (0, 0, 0), curve_points, 3)
 
         # İç granüller (ilaç tanecikleri) - hareketli, dönen, boyut değiştiren

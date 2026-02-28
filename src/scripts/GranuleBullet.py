@@ -1,6 +1,7 @@
 """
 Granule Bullet - Fırlatılan ilaç taneciği.
 Sıvı içinde hareket eder, sürtünme ile yavaşlar, pulse animasyonu.
+Hücrelere çarpınca yutulabilir veya geri seker.
 """
 from pygaminal import App, Screen, Object
 import pygame
@@ -39,9 +40,44 @@ class GranuleBullet:
         # Renk
         self.color = (255, 235, 180)  # Açık sarı
 
+        # Yutulma durumu
+        self.is_swallowed = False
+        self.swallowed_by = None  # Hangi hücre yuttu?
+        self.owner = None  # Hangi hücre ateşledi?
+
+        # Hücre içinde orbital hareket
+        self.orbit_angle = 0.0
+        self.orbit_radius = 0.0
+        self.orbit_speed = 2.0
+
+        # Çarpışma kontrolü için
+        self._processed_collision = False  # Bu frame'de çarpışma işlendi mi?
+
     def update(self, obj):
         """Hareket, sürtünme, pulse, lifecycle güncelle."""
         app = App()
+
+        # Yutulduysa hücreyle hareket et
+        if self.is_swallowed and self.swallowed_by:
+            cell_obj = self.swallowed_by
+
+            # Orbital hareket - merkezi etrafında dolaş
+            self.orbit_angle += self.orbit_speed * app.dt
+
+            # Hücrenin içinde orbital pozisyon
+            offset_x = math.cos(self.orbit_angle) * self.orbit_radius
+            offset_y = math.sin(self.orbit_angle) * self.orbit_radius
+
+            # Mini wobble ekle
+            wobble_x = math.cos(app.now * 5 + self.orbit_angle) * 2
+            wobble_y = math.sin(app.now * 5 + self.orbit_angle) * 2
+
+            obj.x = cell_obj.x + offset_x + wobble_x
+            obj.y = cell_obj.y + offset_y + wobble_y
+
+            # Pulse animasyonu devam etsin
+            self.pulse_phase += self.pulse_speed * app.dt
+            return  # Diğer update işlemlerini yapma
 
         # Hareket etmiyorsa bekle
         if self.is_waiting:
@@ -53,6 +89,9 @@ class GranuleBullet:
                 # Obje yok et
                 obj.kill()
             return
+
+        # Çarpışma kontrolü
+        self._check_collision(obj)
 
         # Hareket
         # Hızı güncelle (sürtünme)
@@ -69,6 +108,114 @@ class GranuleBullet:
 
         # Pulse animasyonu
         self.pulse_phase += self.pulse_speed * app.dt
+
+    def _check_collision(self, obj):
+        """Hücrelerle çarpışma kontrolü."""
+        scene = App().get_current_scene()
+
+        # Sahnedeki tüm objeleri kontrol et
+        for other_obj in scene.get_all_objects():
+            # Kendini atla
+            if other_obj is obj:
+                continue
+
+            # Owner'ı atla (kendi ateşlediği hücre)
+            if self.owner and other_obj is self.owner:
+                continue
+
+            # CellImage component'i var mı?
+            cell_image = other_obj.get_component("CellImage")
+            if not cell_image:
+                continue
+
+            # CircleHitbox component'i var mı?
+            hitbox = other_obj.get_component("CircleHitbox")
+            if not hitbox:
+                continue
+
+            # Bullet'un kendi hitbox'ı (küçük bir daire)
+            bullet_radius = 2  # Bullet yaklaşık 4px çapında
+
+            # Çarpışma kontrolü
+            cell_center = hitbox.get_world_center(other_obj)
+            cell_radius = hitbox.get_world_radius()
+
+            dx = obj.x - cell_center[0]
+            dy = obj.y - cell_center[1]
+            distance = (dx * dx + dy * dy) ** 0.5
+
+            # Çarpışma var mı?
+            if distance < (cell_radius + bullet_radius):
+                # Penetrasyon derinliği - hücre ne kadar içine girmiş?
+                penetration = (cell_radius + bullet_radius) - distance
+
+                # Merkeze doğru olan hız bileşenini hesapla
+                # Bullet → Cell merkezi vektörü (normalize)
+                to_center_x = cell_center[0] - obj.x
+                to_center_y = cell_center[1] - obj.y
+                dist_to_center = (to_center_x**2 + to_center_y**2) ** 0.5
+
+                if dist_to_center > 0:
+                    to_center_x /= dist_to_center
+                    to_center_y /= dist_to_center
+
+                # Velocity vektörü
+                vel_x = self.dir_x * self.speed
+                vel_y = self.dir_y * self.speed
+
+                # Dot product = merkeze doğru olan hız bileşeni (radial velocity)
+                radial_velocity = vel_x * to_center_x + vel_y * to_center_y
+
+                # Debug
+                print(f"Collision! penetration={penetration:.2f}, radial_vel={radial_velocity:.1f}")
+
+                # Merkeze doğru olan hız bileşeni 10'dan büyükse yut
+                # Teğet/kenardan geçiyorsa (radial velocity düşük) sek
+                if radial_velocity > 50:
+                    # YUTULMA!
+                    print(f"  -> SWALLOWED!")
+                    self._be_swallowed(obj, other_obj, cell_image)
+                else:
+                    # Geri sek - proper reflection
+                    print(f"  -> BOUNCE")
+
+                    # Normal vektör: hücre merkezinden bullet'a doğru
+                    normal_x = dx / distance
+                    normal_y = dy / distance
+
+                    # Reflection: v' = v - 2(v·n)n
+                    dot_product = self.dir_x * normal_x + self.dir_y * normal_y
+
+                    # Yansıtılmış direction
+                    self.dir_x = self.dir_x - 2 * dot_product * normal_x
+                    self.dir_y = self.dir_y - 2 * dot_product * normal_y
+
+                    # Biraz hız kaybet
+                    self.speed *= 0.7
+
+                    # Hücreden uzağa taşı (takılmamak için)
+                    overlap = (cell_radius + bullet_radius) - distance + 1
+                    obj.x += normal_x * overlap
+                    obj.y += normal_y * overlap
+
+                # Bir frame'de sadece bir çarpışma işle
+                break
+
+    def _be_swallowed(self, obj, cell_obj, cell_image):
+        """Hücre tarafından yutul."""
+        # Yutulma durumunu işaretle
+        self.is_swallowed = True
+        self.swallowed_by = cell_obj
+
+        # Orbital hareket parametreleri - rastgele
+        import random
+        self.orbit_angle = random.random() * 2 * math.pi  # Rastgele açı
+        self.orbit_radius = random.uniform(3, 8)  # 3-8px yarıçapta orbit
+        self.orbit_speed = random.uniform(1.5, 3.0)  # Dönme hızı
+
+        # Hücreye bildir - yutuldu!
+        if hasattr(cell_image.instance, 'swallow_bullet'):
+            cell_image.instance.swallow_bullet(obj)
 
     def _spawn_death_particles(self, obj):
         """Bullet yok olurken mini particle patlaması oluştur."""

@@ -89,13 +89,13 @@ class ShootingController:
 
         # Ateş et
         if dir_x is not None and dir_y is not None:
-            # Mermi spawnla
-            self._spawn_bullet(scene, obj.x, obj.y, dir_x, dir_y)
+            # Mermi spawnla (obj = owner)
+            self._spawn_bullet(scene, obj.x, obj.y, dir_x, dir_y, obj)
 
             # Cooldown başlat
             self.last_shot_time = app.now
 
-    def _spawn_bullet(self, scene, x, y, dir_x, dir_y):
+    def _spawn_bullet(self, scene, x, y, dir_x, dir_y, owner_obj):
         """Yeni mermi objesi spawnla - .obj dosyasından yükler."""
         # Spawn pozisyonu - karakter merkezinden biraz ötele
         spawn_offset = 10  # 10 piksel önde
@@ -110,6 +110,7 @@ class ShootingController:
         bullet_comp.instance.dir_x = dir_x
         bullet_comp.instance.dir_y = dir_y
         bullet_comp.instance.speed = self.bullet_speed
+        bullet_comp.instance.owner = owner_obj  # Owner'ı set et
 
         # Sahneye ekle
         scene.add_object(bullet)
