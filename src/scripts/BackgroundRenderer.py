@@ -170,9 +170,9 @@ class BackgroundRenderer:
             screen_br_world_y = world_offset_y + self.screen_h
 
             # Hangi chunk'ların görüneceğini hesapla
-            start_chunk_x = int(screen_tl_world_x / chunk_w)
+            start_chunk_x = int(screen_tl_world_x / chunk_w) - 1
             end_chunk_x = int(screen_br_world_x / chunk_w) + 1
-            start_chunk_y = int(screen_tl_world_y / chunk_h)
+            start_chunk_y = int(screen_tl_world_y / chunk_h) - 1
             end_chunk_y = int(screen_br_world_y / chunk_h) + 1
 
             # Chunk'ları çiz
