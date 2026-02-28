@@ -25,6 +25,7 @@ class ShootingController:
 
         # Joystick initialization
         self.joystick = None
+        self.last_trigger_state = False  # Trigger "just pressed" için
         try:
             pygame.joystick.init()
             if pygame.joystick.get_count() > 0:
@@ -48,9 +49,12 @@ class ShootingController:
 
         # Joystick kontrolü
         if self.joystick:
-            # Right trigger (axis 5) - 0.5'den büyükse ateş et
-            trigger_value = self.joystick.get_button(5)
-            if trigger_value > 0.5:
+            # Right trigger (button 5) - "just pressed" mantığı
+            trigger_pressed = self.joystick.get_button(5)
+            trigger_just_pressed = trigger_pressed and not self.last_trigger_state
+            self.last_trigger_state = trigger_pressed
+
+            if trigger_just_pressed:
                 # PlayerController'dan aim direction al
                 player_controller = obj.get_component("PlayerController")
                 if player_controller:
