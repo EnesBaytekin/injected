@@ -296,6 +296,10 @@ class CellImage:
                 r = int(self.color[0] + (255 - self.color[0]) * self.inner_color_progress)
                 g = int(self.color[1] + (255 - self.color[1]) * self.inner_color_progress)
                 b = int(self.color[2] + (255 - self.color[2]) * self.inner_color_progress)
+                # 255'i geçmemesini sağla
+                r = max(0, min(255, r))
+                g = max(0, min(255, g))
+                b = max(0, min(255, b))
                 fill_color = (r, g, b)
             else:
                 fill_color = self.color
