@@ -8,18 +8,20 @@ class CellImage:
     16 noktalı yumuşak geçişli çizim.
     """
 
-    def __init__(self, radius=32, color=(255, 180, 80), wobble_speed=2.0, wobble_amount=4.0):
+    def __init__(self, radius=32, color=(255, 180, 80), wobble_speed=2.0, wobble_amount=4.0, stretch_max=2.5):
         """
         Args:
             radius: Hücre yarıçapı
             color: RGB renk tuple
             wobble_speed: Deformasyon hızı
             wobble_amount: Deformasyon miktarı (piksel)
+            stretch_max: Maksimum stretch faktörü (1.0 = yok, 2.0 = 2x uzama)
         """
         self.radius = radius
         self.color = color
         self.wobble_speed = wobble_speed
         self.wobble_amount = wobble_amount
+        self.stretch_max = stretch_max
 
         # 16 nokta oluştur (daire etrafında)
         self.num_points = 16
@@ -122,16 +124,44 @@ class CellImage:
         )
 
     def draw(self, obj):
-        """Pixel art tarzı deformasyonlu hücre çiz"""
+        """Pixel art tarzı deformasyonlu hücre çiz - hıza göre eliptik deformasyon"""
         screen = Screen()
 
-        # Surface oluştur
-        size = int(self.radius * 3)
+        # Surface oluştur - stretch_max'a göre büyüt
+        size = int(self.radius * (2 + self.stretch_max))  # Yeterince büyük
         surface = pygame.Surface((size, size), pygame.SRCALPHA)
         center = size // 2
 
         if not self.current_points:
             return
+
+        # Hıza göre deformasyon parametrelerini hesapla
+        movement = obj.get_component("Movement")
+        stretch_factor = 1.0  # Varsayılan: deformasyon yok
+
+        if movement:
+            # Hız vektörünü al
+            vel_x = movement.vel_x
+            vel_y = movement.vel_y
+            speed = (vel_x ** 2 + vel_y ** 2) ** 0.5
+
+            # Hıza göre stretch faktörü (maksimum stretch_max'a kadar)
+            # speed = 200 ise stretch_factor = stretch_max
+            max_expected_speed = 200.0
+            speed_ratio = min(speed / max_expected_speed, 1.0)
+            stretch_factor = 1.0 + speed_ratio * (self.stretch_max - 1.0)  # 1.0 ile stretch_max arası
+
+        # Hız yönünü normalize et
+        velocity_dir = (1.0, 0.0)  # Varsayılan (sağ)
+        if movement:
+            vel_x = movement.vel_x
+            vel_y = movement.vel_y
+            speed = (vel_x ** 2 + vel_y ** 2) ** 0.5
+            if speed > 0.1:
+                velocity_dir = (vel_x / speed, vel_y / speed)
+
+        # Hız yönüne dik vektör (perpendicular)
+        perp_dir = (-velocity_dir[1], velocity_dir[0])
 
         # Yumuşak eğri ile noktaları birleştir
         points = self.current_points
@@ -150,6 +180,24 @@ class CellImage:
             for j in range(segments_per_edge):
                 t = j / segments_per_edge
                 px, py = self._catmull_rom_spline(p0, p1, p2, p3, t)
+
+                # Hıza göre eliptik deformasyon uygula
+                if stretch_factor > 1.001:
+                    # Nokta pozisyonunu hız yönü ve dik yönüne decompose et
+                    # velocity yönündeki bileşen
+                    vel_dot = px * velocity_dir[0] + py * velocity_dir[1]
+                    # perpendicular yönündeki bileşen
+                    perp_dot = px * perp_dir[0] + py * perp_dir[1]
+
+                    # Hız yönünde: stretch_factor kadar uzat
+                    vel_dot *= stretch_factor
+                    # Dik yönde: 1/stretch_factor kadar kısalt (sıkıştır)
+                    perp_dot /= stretch_factor
+
+                    # Tekrar birleştir
+                    px = vel_dot * velocity_dir[0] + perp_dot * perp_dir[0]
+                    py = vel_dot * velocity_dir[1] + perp_dot * perp_dir[1]
+
                 curve_points.append((px + center, py + center))
 
         # Doldur (daha yumuşak için anti-aliased polygon)

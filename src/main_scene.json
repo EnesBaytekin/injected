@@ -11,7 +11,7 @@
       "components": [
         {
           "file": "scripts/CellImage",
-          "args": [16, [255, 180, 80], 2, 2]
+          "args": [16, [255, 180, 80], 2, 2, 2.5]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -35,7 +35,7 @@
       "components": [
         {
           "file": "scripts/CellImage",
-          "args": [16, [190, 180, 80], 2, 2]
+          "args": [16, [190, 180, 80], 2, 2, 2.5]
         },
         {
           "file": "scripts/CircleHitbox",
