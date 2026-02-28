@@ -2,7 +2,7 @@
 Granule Bullet - Fırlatılan ilaç taneciği.
 Sıvı içinde hareket eder, sürtünme ile yavaşlar, pulse animasyonu.
 """
-from pygaminal import App, Screen
+from pygaminal import App, Screen, Object
 import pygame
 import math
 
@@ -47,9 +47,11 @@ class GranuleBullet:
         if self.is_waiting:
             self.wait_time += app.dt
             if self.wait_time >= self.wait_duration:
+                # Particle efekti spawnla
+                self._spawn_death_particles(obj)
+
                 # Obje yok et
-                scene = app.get_current_scene()
-                scene.remove_object(obj)
+                obj.kill()
             return
 
         # Hareket
@@ -67,6 +69,39 @@ class GranuleBullet:
 
         # Pulse animasyonu
         self.pulse_phase += self.pulse_speed * app.dt
+
+    def _spawn_death_particles(self, obj):
+        """Bullet yok olurken mini particle patlaması oluştur."""
+        from scripts.ParticleEffect import ParticleEffect
+        from pygaminal import ScriptComponent
+
+        # Particle objesi oluştur - yüksek depth ile (her şeyin önünde)
+        particle_obj = Object(obj.x, obj.y, depth=1000)
+
+        # Particle efekti ekle - mini pixel patlaması
+        effect = ParticleEffect(
+            particle_count=20,  # 20 tane mini particle
+            shape=ParticleEffect.SHAPE_PIXEL,
+            color=((255, 235, 180), (255, 200, 100)),  # Sarı -> altın
+            lifetime=(0.3, 0.6),  # Kısa ömür
+            size=1.0,  # 1 piksel
+            velocity=50,  # Yavaş yayılma
+            acceleration=(0, 0),
+            spawn_mode="burst",
+            one_shot=True,
+            fade_out=True,
+            friction=2.0,  # Hızlı yavaşla
+            spread=360  # Tüm yönler
+        )
+
+        # ScriptComponent wrapper ile ekle
+        script_comp = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp.instance = effect
+        particle_obj.add_component(script_comp)
+
+        # Sahneye ekle
+        scene = App().get_current_scene()
+        scene.add_object(particle_obj)
 
     def draw(self, obj):
         """Granülü çiz - pulse efekti ile."""
