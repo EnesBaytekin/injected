@@ -1,0 +1,16 @@
+{
+  "x": 300,
+  "y": 200,
+  "name": "lymph_node",
+  "tags": ["lymph_node"],
+  "components": [
+    {
+      "file": "scripts/LymphNode",
+      "args": [40, 100]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [40]
+    }
+  ]
+}

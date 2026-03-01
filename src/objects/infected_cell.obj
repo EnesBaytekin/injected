@@ -1,0 +1,20 @@
+{
+  "x": 100,
+  "y": 150,
+  "name": "infected_cell",
+  "tags": ["infected"],
+  "components": [
+    {
+      "file": "scripts/CellImage",
+      "args": [12, [150, 100, 80], 2, 2, 2.5]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [12]
+    },
+    {
+      "file": "scripts/InfectedCellAI",
+      "args": [50]
+    }
+  ]
+}

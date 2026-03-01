@@ -1,0 +1,20 @@
+{
+  "x": 200,
+  "y": 100,
+  "name": "virus",
+  "tags": ["enemy"],
+  "components": [
+    {
+      "file": "scripts/CellImage",
+      "args": [6, [150, 150, 200], 4, 5, 2.5]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [6]
+    },
+    {
+      "file": "scripts/VirusAI",
+      "args": [60, 100]
+    }
+  ]
+}

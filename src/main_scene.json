@@ -48,6 +48,22 @@
       ]
     },
     {
+      "x": 300,
+      "y": 150,
+      "name": "lymph_node",
+      "tags": ["lymph_node"],
+      "components": [
+        {
+          "file": "scripts/LymphNode",
+          "args": [40, 100]
+        },
+        {
+          "file": "scripts/CircleHitbox",
+          "args": [40]
+        }
+      ]
+    },
+    {
       "x": 100,
       "y": 90,
       "name": "cell",
@@ -124,6 +140,90 @@
         {
           "file": "scripts/Movement",
           "args": [200, 2.0, 50]
+        }
+      ]
+    },
+    {
+      "x": 50,
+      "y": 150,
+      "name": "infected_cell",
+      "tags": ["infected"],
+      "components": [
+        {
+          "file": "scripts/CellImage",
+          "args": [12, [150, 100, 80], 2, 2, 2.5]
+        },
+        {
+          "file": "scripts/CircleHitbox",
+          "args": [12]
+        },
+        {
+          "file": "scripts/InfectedCellAI",
+          "args": [50]
+        }
+      ]
+    },
+    {
+      "x": 80,
+      "y": 80,
+      "name": "bacteria",
+      "tags": ["enemy"],
+      "components": [
+        {
+          "file": "scripts/CellImage",
+          "args": [8, [200, 50, 50], 3, 4, 2.5]
+        },
+        {
+          "file": "scripts/CircleHitbox",
+          "args": [8]
+        },
+        {
+          "file": "scripts/BacteriaAI",
+          "args": [80, 200]
+        }
+      ]
+    },
+    {
+      "x": 200,
+      "y": 100,
+      "name": "virus",
+      "tags": ["enemy"],
+      "components": [
+        {
+          "file": "scripts/CellImage",
+          "args": [6, [150, 150, 200], 4, 5, 2.5]
+        },
+        {
+          "file": "scripts/CircleHitbox",
+          "args": [6]
+        },
+        {
+          "file": "scripts/VirusAI",
+          "args": [60, 100]
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "name": "chunk_manager",
+      "tags": ["chunk"],
+      "components": [
+        {
+          "file": "scripts/ChunkManager",
+          "args": [1000]
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "name": "enemy_spawner",
+      "tags": ["spawner"],
+      "components": [
+        {
+          "file": "scripts/EnemySpawner",
+          "args": [5.0, 15]
         }
       ]
     },
