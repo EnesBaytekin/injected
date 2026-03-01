@@ -64,86 +64,6 @@
       ]
     },
     {
-      "x": 100,
-      "y": 90,
-      "name": "cell",
-      "tags": ["controllable"],
-      "components": [
-        {
-          "file": "scripts/CellImage",
-          "args": [16, [190, 180, 80], 2, 2, 2.5]
-        },
-        {
-          "file": "scripts/CircleHitbox",
-          "args": [16]
-        },
-        {
-          "file": "scripts/Movement",
-          "args": [200, 2.0, 50]
-        }
-      ]
-    },
-    {
-      "x": 100,
-      "y": 110,
-      "name": "cell",
-      "tags": ["controllable"],
-      "components": [
-        {
-          "file": "scripts/CellImage",
-          "args": [16, [190, 180, 80], 2, 2, 2.5]
-        },
-        {
-          "file": "scripts/CircleHitbox",
-          "args": [16]
-        },
-        {
-          "file": "scripts/Movement",
-          "args": [200, 2.0, 50]
-        }
-      ]
-    },
-    {
-      "x": 120,
-      "y": 110,
-      "name": "cell",
-      "tags": ["controllable"],
-      "components": [
-        {
-          "file": "scripts/CellImage",
-          "args": [16, [190, 180, 80], 2, 2, 2.5]
-        },
-        {
-          "file": "scripts/CircleHitbox",
-          "args": [16]
-        },
-        {
-          "file": "scripts/Movement",
-          "args": [200, 2.0, 50]
-        }
-      ]
-    },
-    {
-      "x": 120,
-      "y": 90,
-      "name": "cell",
-      "tags": ["controllable"],
-      "components": [
-        {
-          "file": "scripts/CellImage",
-          "args": [16, [190, 180, 80], 2, 2, 2.5]
-        },
-        {
-          "file": "scripts/CircleHitbox",
-          "args": [16]
-        },
-        {
-          "file": "scripts/Movement",
-          "args": [200, 2.0, 50]
-        }
-      ]
-    },
-    {
       "x": 800,
       "y": 150,
       "name": "spawner_1",
@@ -151,7 +71,7 @@
       "components": [
         {
           "file": "scripts/EnemySpawnerObject",
-          "args": [35, 100]
+          "args": [35, 200]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -167,7 +87,7 @@
       "components": [
         {
           "file": "scripts/EnemySpawnerObject",
-          "args": [35, 100]
+          "args": [35, 200]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -183,7 +103,7 @@
       "components": [
         {
           "file": "scripts/EnemySpawnerObject",
-          "args": [35, 100]
+          "args": [35, 200]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -211,7 +131,7 @@
       "components": [
         {
           "file": "scripts/EnemySpawner",
-          "args": [5.0, 15, 20.0]
+          "args": [10.0, 20, 10, 20.0]
         }
       ]
     },

@@ -1,0 +1,16 @@
+{
+  "x": 0,
+  "y": 0,
+  "name": "cell",
+  "tags": ["passive_cell"],
+  "components": [
+    {
+      "file": "scripts/CellImage",
+      "args": [16, [190, 180, 80], 2, 2, 2.5, 3]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [16]
+    }
+  ]
+}

@@ -12,15 +12,17 @@ class EnemySpawner:
     Lenf düğümü etrafında procedural olarak düşman oluşturur.
     """
 
-    def __init__(self, spawn_interval=5.0, max_enemies=10, grace_period=20.0):
+    def __init__(self, spawn_interval=10.0, max_cells=20, max_viruses=10, grace_period=20.0):
         """
         Args:
             spawn_interval: Spawn arası (saniye)
-            max_enemies: Maksimum aynı anda kaç düşman olabilir
+            max_cells: Maksimum aynı anda kaç passive cell olabilir
+            max_viruses: Maksimum aynı anda kaç virus olabilir
             grace_period: Başlangıçta spawn yapmaz (saniye)
         """
         self.spawn_interval = spawn_interval
-        self.max_enemies = max_enemies
+        self.max_cells = max_cells
+        self.max_viruses = max_viruses
         self.grace_period = grace_period
         self.spawn_timer = 0.0
         self.game_time = 0.0  # Toplam oyun süresi
@@ -46,15 +48,24 @@ class EnemySpawner:
             self._try_spawn(scene)
 
     def _try_spawn(self, scene):
-        """Düşman spawnlamayı dene."""
-        # Mevcut düşman sayısını kontrol et
-        enemy_count = len(scene.get_objects_by_tag("enemy"))
-        infected_count = len(scene.get_objects_by_tag("infected"))
+        """Cell ve virus spawnlamayı dene."""
+        # Mevcut sayıları kontrol et
+        cell_count = len(scene.get_objects_by_tag("passive_cell"))
+        virus_count = len(scene.get_objects_by_tag("enemy"))
 
-        total_enemies = enemy_count + infected_count
+        # Spawn kararı - cell mi virus mu?
+        import random
+        if cell_count < self.max_cells and (virus_count >= self.max_viruses or random.random() < 0.6):
+            # %60 şansla cell, %40 şansla virus (limitlere göre)
+            spawn_type = "cell"
+        else:
+            spawn_type = "virus"
 
-        if total_enemies >= self.max_enemies:
-            return  # Çok fazla düşman var
+        # Limit kontrolü
+        if spawn_type == "cell" and cell_count >= self.max_cells:
+            return  # Çok fazla cell var
+        if spawn_type == "virus" and virus_count >= self.max_viruses:
+            return  # Çok fazla virus var
 
         # Lenf düğümünü bul
         lymph_nodes = scene.get_objects_by_tag("lymph_node")
@@ -64,41 +75,64 @@ class EnemySpawner:
 
         node = lymph_nodes[0]
 
-        # Üs etrafında random pozisyon hesapla (spawn_radius içinde)
+        # Random pozisyon - lenf düğümü etrafında geniş alanda
         angle = random.uniform(0, 360)
-        radius = random.uniform(200, 400)  # 200-400 piksel uzaklık
+        radius = random.uniform(100, 500)  # 100-500 piksel uzaklık
 
         import math
         rad = math.radians(angle)
         spawn_x = node.x + math.cos(rad) * radius
         spawn_y = node.y + math.sin(rad) * radius
 
-        # Random düşman tipi seç
-        enemy_type = random.choice([
-            "infected_cell",  # %40 şans
-            "infected_cell",
-            "infected_cell",
-            "infected_cell",
-            "bacteria",       # %30 şans
-            "bacteria",
-            "bacteria",
-            "virus"           # %30 şans
-        ])
+        # Spawn yap
+        if spawn_type == "cell":
+            self._spawn_cell(spawn_x, spawn_y, scene)
+        else:
+            self._spawn_virus(spawn_x, spawn_y, scene)
 
-        # Düşman oluştur
-        self._spawn_enemy(enemy_type, spawn_x, spawn_y, scene)
+    def _spawn_cell(self, x, y, scene):
+        """Passive cell spawnla - .obj dosyasından."""
+        # Çarpışma kontrolü - başka bir şeyin içinde mi?
+        if self._check_collision_at(x, y, scene, radius=20):
+            return  # İçinde spawn yapma
 
-    def _spawn_enemy(self, enemy_type, x, y, scene):
-        """Belirtilen tipte düşman spawnla - .obj dosyasından."""
-        # .obj dosya yolu
-        obj_file = f"objects/{enemy_type}.obj"
+        # .obj dosyasından yükle
+        cell = Object.from_file("objects/cell.obj", x, y)
+        scene.add_object(cell)
+        print(f"Spawned passive cell at ({x:.1f}, {y:.1f})")
 
-        # Objeyi dosyadan yükle
-        enemy = Object.from_file(obj_file, x, y)
+    def _spawn_virus(self, x, y, scene):
+        """Virus spawnla - .obj dosyasından."""
+        # Çarpışma kontrolü
+        if self._check_collision_at(x, y, scene, radius=15):
+            return  # İçinde spawn yapma
 
-        # Sahneye ekle
-        scene.add_object(enemy)
-        print(f"Spawned {enemy_type} at ({x:.1f}, {y:.1f})")
+        # .obj dosyasından yükle
+        virus = Object.from_file("objects/virus.obj", x, y)
+        scene.add_object(virus)
+        print(f"Spawned virus at ({x:.1f}, {y:.1f})")
+
+    def _check_collision_at(self, x, y, scene, radius=20):
+        """Belirli bir konumda çarpışma var mı kontrol et."""
+        # Tüm objeleri kontrol et
+        for obj in scene.get_all_objects():
+            if obj.dead:
+                continue
+
+            # Hitbox'ı kontrol et
+            hitbox = obj.get_component("CircleHitbox")
+            if not hitbox:
+                continue
+
+            # Mesafe kontrolü
+            dx = x - obj.x
+            dy = y - obj.y
+            dist = (dx * dx + dy * dy) ** 0.5
+
+            if dist < hitbox.radius + radius:
+                return True  # Çarpışma var
+
+        return False  # Çarpışma yok
 
     def draw(self, obj):
         """Çizim yok."""

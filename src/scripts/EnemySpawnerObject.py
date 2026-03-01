@@ -14,7 +14,7 @@ class EnemySpawnerObject:
     Hücresel bölünme ile düşman üretir.
     """
 
-    def __init__(self, radius=35, max_health=100):
+    def __init__(self, radius=35, max_health=200):
         """
         Args:
             radius: Spawner yarıçapı
@@ -95,11 +95,10 @@ class EnemySpawnerObject:
         spawn_y = obj.y + math.sin(rad) * spawn_distance
 
         if self.division_spawn_type == "enemy":
-            # Random düşman tipi seç
+            # Random düşman tipi seç (virus yok, sadece bacteria ve infected)
             enemy_type = random.choice([
                 "infected_cell", "infected_cell", "infected_cell",
-                "bacteria", "bacteria",
-                "virus"
+                "bacteria", "bacteria"
             ])
             enemy = Object.from_file(f"objects/{enemy_type}.obj", spawn_x, spawn_y)
             scene.add_object(enemy)
