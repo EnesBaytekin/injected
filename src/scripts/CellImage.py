@@ -8,7 +8,7 @@ class CellImage:
     16 noktalı yumuşak geçişli çizim.
     """
 
-    def __init__(self, radius=32, color=(255, 180, 80), wobble_speed=2.0, wobble_amount=4.0, stretch_max=2.5):
+    def __init__(self, radius=32, color=(255, 180, 80), wobble_speed=2.0, wobble_amount=4.0, stretch_max=2.5, capacity=3):
         """
         Args:
             radius: Hücre yarıçapı
@@ -16,12 +16,14 @@ class CellImage:
             wobble_speed: Deformasyon hızı
             wobble_amount: Deformasyon miktarı (piksel)
             stretch_max: Maksimum stretch faktörü (1.0 = yok, 2.0 = 2x uzama)
+            capacity: Kaç bullet yutunca öleceği (varsayılan 3)
         """
         self.radius = radius
         self.color = color
         self.wobble_speed = wobble_speed
         self.wobble_amount = wobble_amount
         self.stretch_max = stretch_max
+        self.capacity = capacity
 
         # 16 nokta oluştur (daire etrafında)
         self.num_points = 16
@@ -52,7 +54,6 @@ class CellImage:
 
         # Yutulma mekaniiği
         self.swallowed_bullets = []  # Yutulan bullet objeleri
-        self.capacity = 3  # Kaç bullet yutunca sindirilmeye başlayacak
         self.is_digesting = False  # Sindiriliyor mu?
         self.digestion_progress = 0.0  # Sindirme ilerlemesi (0.0 - 1.0)
         self.tremor_intensity = 0.0  # Titreme şiddeti

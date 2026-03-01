@@ -86,7 +86,7 @@ class EnemySpawner:
 
             # CellImage (turuncu/kırmızımsı)
             from pygaminal import ScriptComponent
-            cell_image = ScriptComponent("scripts/CellImage", [12, [150, 100, 80], 2, 2, 2.5])
+            cell_image = ScriptComponent("scripts/CellImage", [12, [150, 100, 80], 2, 2, 2.5, 2])
             enemy.add_component(cell_image)
 
             # Hitbox
@@ -104,7 +104,7 @@ class EnemySpawner:
             enemy = Object(x, y)
 
             from pygaminal import ScriptComponent
-            cell_image = ScriptComponent("scripts/CellImage", [8, [200, 50, 50], 3, 4, 2.5])
+            cell_image = ScriptComponent("scripts/CellImage", [8, [200, 50, 50], 3, 4, 2.5, 1])
             enemy.add_component(cell_image)
 
             hitbox = ScriptComponent("scripts/CircleHitbox", [8])
