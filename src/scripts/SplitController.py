@@ -32,7 +32,7 @@ class SplitController:
         self.merge_distance = 20  # Birleşme mesafesi (piksel)
 
         # Elastik bağ kuvveti (uzaklaştıkça birbirini çeker)
-        self.elastic_max_distance = 220  # Maksimum mesafe (bundan sonra kuvvet başlar)
+        self.elastic_max_distance = 180  # Maksimum mesafe (bundan sonra kuvvet başlar)
         self.elastic_strength = 50  # Çekme kuvveti gücü (doğrudan pozisyon için düşük)
 
     def update(self, obj):
