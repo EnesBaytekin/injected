@@ -3,4 +3,20 @@
 from pygaminal import *
 
 if __name__ == "__main__":
-    run_app("main_scene.json")
+    # Önce menu sahnesini yükle
+    app = App()
+    app.init(320, 180, "INJECTED")
+
+    # Menu sahnesini yükle
+    menu_scene = Scene.get_scene_from_json("menu_scene.json")
+    app.add_scene("menu", menu_scene)
+
+    # Oyun sahnesini yükle (arkada hazır dursun)
+    game_scene = Scene.get_scene_from_json("main_scene.json")
+    app.add_scene("game", game_scene)
+
+    # Menu'den başla
+    app.set_scene("menu")
+
+    app.run()
+

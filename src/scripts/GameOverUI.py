@@ -174,16 +174,9 @@ class GameOverUI:
     def handle_click(self):
         """Buton tıklamasını kontrol et."""
         if self.is_game_over and self.fade_alpha >= 180 and self.button_hovered:
-            # Oyunu yeniden başlat (main scene'i yükle)
-            from pygaminal import Scene
+            # Menu sahnesine dön
             app = App()
-
-            # Mevcut scene'i temizle
-            current_scene = app.get_current_scene()
-
-            # Yeni scene yükle
-            new_scene = Scene.get_scene_from_json("main_scene.json")
-            app.scenes["main"] = new_scene
+            app.set_scene("menu")
 
             # Game over'ı resetle
             self.is_game_over = False
