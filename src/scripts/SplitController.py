@@ -114,6 +114,7 @@ class SplitController:
 
         # Tag'leri ekle
         new_obj.tags.add("controllable")
+        new_obj.tags.add("hero")
         new_obj.tags.add("split_cell")
 
     def _try_merge(self, obj):
@@ -239,29 +240,5 @@ class SplitController:
 
         # Birleşme mesafesinden yakınsa yeşil çizgi çiz
         if dist < self.merge_distance * 3:
-            screen = Screen()
-
-            # Camera transform
-            draw_x = obj.x
-            draw_y = obj.y
-            try:
-                from scripts.Camera import Camera
-                camera = Camera()
-                draw_x, draw_y = camera.world_to_screen(draw_x, draw_y)
-            except:
-                pass
-
-            # Partner position
-            partner_draw_x = partner_obj.x
-            partner_draw_y = partner_obj.y
-            try:
-                from scripts.Camera import Camera
-                camera = Camera()
-                partner_draw_x, partner_draw_y = camera.world_to_screen(partner_draw_x, partner_draw_y)
-            except:
-                pass
-
-            # Yeşil çizgi çek
-            pygame.draw.line(screen.surface, (0, 255, 0),
-                           (int(draw_x), int(draw_y)),
-                           (int(partner_draw_x), int(partner_draw_y)), 2)
+            # Debug line kaldırıldı
+            pass

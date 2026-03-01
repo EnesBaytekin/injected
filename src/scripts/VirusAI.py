@@ -34,20 +34,29 @@ class VirusAI:
         app = App()
         scene = app.get_current_scene()
 
-        # Hero'yu bul
+        # Hero'ları bul (bölünmüş olabilir)
         heroes = scene.get_objects_by_tag("hero")
 
-        if heroes and not heroes[0].dead:
-            hero = heroes[0]
+        # En yakın hero'yu bul
+        closest_hero = None
+        min_dist = float('inf')
 
-            # Mesafeyi hesapla
+        for hero in heroes:
+            if hero.dead:
+                continue
+
             dx = hero.x - obj.x
             dy = hero.y - obj.y
             dist = (dx * dx + dy * dy) ** 0.5
 
+            if dist < min_dist:
+                min_dist = dist
+                closest_hero = hero
+
+        if closest_hero:
             # Çok yakınsa kaç
-            if dist < self.flee_radius:
-                self._flee(obj, hero)
+            if min_dist < self.flee_radius:
+                self._flee(obj, closest_hero)
             else:
                 # Güvende, rastgele dolaş
                 self._wander(obj)

@@ -34,26 +34,31 @@ class BacteriaAI:
         app = App()
         scene = app.get_current_scene()
 
-        # Hero'yu bul
+        # Hero'ları bul (bölünmüş olabilir)
         heroes = scene.get_objects_by_tag("hero")
 
-        if not heroes or heroes[0].dead:
-            # Hero yoksa rastgele dolaş
-            self._wander(obj)
-        else:
-            hero = heroes[0]
+        # En yakın hero'yu bul
+        closest_hero = None
+        min_dist = float('inf')
 
-            # Mesafeyi hesapla
+        for hero in heroes:
+            if hero.dead:
+                continue
+
             dx = hero.x - obj.x
             dy = hero.y - obj.y
             dist = (dx * dx + dy * dy) ** 0.5
 
+            if dist < min_dist:
+                min_dist = dist
+                closest_hero = hero
+
+        if closest_hero and min_dist < self.detection_radius:
             # Detection radius içindeyse takip et
-            if dist < self.detection_radius:
-                self._chase(obj, hero)
-            else:
-                # Uzakta, rastgele dolaş
-                self._wander(obj)
+            self._chase(obj, closest_hero)
+        else:
+            # Uzakta veya hero yok, rastgele dolaş
+            self._wander(obj)
 
         # Pozisyon güncelle
         obj.x += self.vel_x * app.dt
