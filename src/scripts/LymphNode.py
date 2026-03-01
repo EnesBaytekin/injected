@@ -78,10 +78,17 @@ class LymphNode:
             self._on_death()
 
     def _on_death(self):
-        """Lenf düğümü öldüğünde - game over."""
+        """Lenf düğümü öldüğünde - game over'ı tetikle."""
         print("LYMPH NODE DESTROYED! GAME OVER!")
-        # Game over state'i burada handle edilebilir
-        # Şimdilik sadece print
+
+        # Game over UI'sini bul ve tetikle
+        scene = App().get_current_scene()
+        game_over_objs = scene.get_objects_by_tag("ui")
+        for obj in game_over_objs:
+            game_over_comp = obj.get_component("GameOverUI")
+            if game_over_comp and hasattr(game_over_comp, 'instance'):
+                game_over_comp.instance.trigger_game_over()
+                break
 
     def heal(self, amount):
         """Can al."""

@@ -25,6 +25,9 @@ class ShootingController:
         self.last_shot_time = 0
         self.shoulder_button = shoulder_button
 
+        # Enabled flag (Game over'da devre dışı bırakmak için)
+        self.enabled = True
+
         # Joystick initialization
         self.joystick = None
         self.last_trigger_state = False  # Trigger "just pressed" için
@@ -38,6 +41,10 @@ class ShootingController:
 
     def update(self, obj):
         """Her frame ateş kontrolü yap."""
+        # Game over'da çalışma
+        if not self.enabled:
+            return
+
         app = App()
         scene = app.get_current_scene()
 

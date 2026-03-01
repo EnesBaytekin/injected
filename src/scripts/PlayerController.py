@@ -31,7 +31,14 @@ class PlayerController:
         self.joystick_aim_x = 1.0  # Varsayılan: sağa
         self.joystick_aim_y = 0.0
 
+        # Enabled flag (Game over'da devre dışı bırakmak için)
+        self.enabled = True
+
     def update(self, obj):
+        # Game over'da çalışma
+        if not self.enabled:
+            return
+
         app = App()
         im = InputManager()
 

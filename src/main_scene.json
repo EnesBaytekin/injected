@@ -79,7 +79,7 @@
       "components": [
         {
           "file": "scripts/LymphNode",
-          "args": [80, 1000]
+          "args": [80, 50]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -181,6 +181,19 @@
         {
           "file": "scripts/CameraManager",
           "args": ["hero"]
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "name": "game_over_ui",
+      "tags": ["ui", "camera"],
+      "depth": 2000000,
+      "components": [
+        {
+          "file": "scripts/GameOverUI",
+          "args": []
         }
       ]
     }

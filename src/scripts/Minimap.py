@@ -47,6 +47,61 @@ class Minimap:
         """Minimap güncelle - update'de bir şey yapmıyoruz."""
         pass
 
+    def _draw_edge_indicator(self, surface, x, y, color):
+        """
+        Minimap sınırları dışındaki noktaları kenarda göster.
+        Ray-casting ile doğru kenarı bul.
+        """
+        center = self.size / 2
+        dx = x - center
+        dy = y - center
+
+        # Çok uzaktaysa (merkezde) gösterme
+        dist = (dx * dx + dy * dy) ** 0.5
+        if dist < 0.1:
+            return
+
+        # Normalize yön
+        dir_x = dx / dist
+        dir_y = dy / dist
+
+        # Her kenara olan mesafeyi hesapla (t parametresi)
+        # ray: P = center + t * direction
+        t_values = []
+
+        # Sağ kenar (x = size)
+        if dir_x > 0:
+            t_right = (self.size - center) / dir_x
+            t_values.append((t_right, 'right'))
+
+        # Sol kenar (x = 0)
+        if dir_x < 0:
+            t_left = (0 - center) / dir_x
+            t_values.append((t_left, 'left'))
+
+        # Alt kenar (y = size)
+        if dir_y > 0:
+            t_bottom = (self.size - center) / dir_y
+            t_values.append((t_bottom, 'bottom'))
+
+        # Üst kenar (y = 0)
+        if dir_y < 0:
+            t_top = (0 - center) / dir_y
+            t_values.append((t_top, 'top'))
+
+        # En küçük pozitif t'yi bul (en yakın kenar)
+        if not t_values:
+            return
+
+        t_min = min(t_values, key=lambda item: item[0])[0]
+
+        # Kesişim noktasını hesapla
+        edge_x = center + dir_x * t_min
+        edge_y = center + dir_y * t_min
+
+        # Küçük nokta çiz
+        pygame.draw.circle(surface, color, (int(edge_x), int(edge_y)), 2)
+
     def draw(self, obj):
         """Minimap'i çiz - Player merkezli, sürekli takip eden."""
         screen = _screen_cache
@@ -102,6 +157,9 @@ class Minimap:
                 # Minimap sınırları içindeyse çiz
                 if 0 <= lx <= self.size and 0 <= ly <= self.size:
                     pygame.draw.circle(minimap_surface, (50, 200, 50), (int(lx), int(ly)), 3)
+                else:
+                    # Dışındaysa kenarda göster (yeşil)
+                    self._draw_edge_indicator(minimap_surface, lx, ly, (50, 200, 50))
 
         # SPAWNERLARI çiz (mor orta daireler)
         spawners = scene.get_objects_by_tag("enemy_spawner")
@@ -110,6 +168,9 @@ class Minimap:
                 sx, sy = world_to_minimap(spawner.x, spawner.y)
                 if 0 <= sx <= self.size and 0 <= sy <= self.size:
                     pygame.draw.circle(minimap_surface, (180, 100, 180), (int(sx), int(sy)), 2)
+                else:
+                    # Dışındaysa kenarda göster (mor)
+                    self._draw_edge_indicator(minimap_surface, sx, sy, (180, 100, 180))
 
         # HEALER CELL'LERİ çiz (açık yeşil küçük daireler)
         healers = scene.get_objects_by_tag("healer")

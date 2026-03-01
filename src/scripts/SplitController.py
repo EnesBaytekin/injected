@@ -24,6 +24,9 @@ class SplitController:
         except:
             pass
 
+        # Enabled flag (Game over'da devre dışı bırakmak için)
+        self.enabled = True
+
         # Split durumu
         self.is_split = False
         self.partner = None  # Partner hücre (birleşmek için)
@@ -37,6 +40,10 @@ class SplitController:
 
     def update(self, obj):
         """Bölünme/birleşme kontrolü."""
+        # Game over'da çalışma
+        if not self.enabled:
+            return
+
         # Bölünmüş hücrelerde elastik kuvvet uygula
         if self.is_split:
             self._apply_elastic_force(obj)
