@@ -79,6 +79,14 @@ class LymphNode:
         """Can yüzdesini döndür (0.0 - 1.0)."""
         return self.health / self.max_health
 
+    def _lerp_color(self, color1, color2, t):
+        """İki renk arası linear interpolation."""
+        return (
+            int(color1[0] + (color2[0] - color1[0]) * t),
+            int(color1[1] + (color2[1] - color1[1]) * t),
+            int(color1[2] + (color2[2] - color1[2]) * t)
+        )
+
     def draw(self, obj):
         """Lenf düğümünü çiz - nabız atan yeşil daire."""
         screen = Screen()
@@ -88,21 +96,35 @@ class LymphNode:
         pulse = math.sin(self.pulse_phase) * 0.1 + 1.0  # 0.9 - 1.1 arası
         current_radius = int(self.radius * pulse)
 
-        # Can yüzdesine göre renk belirle
+        # Can yüzdesine göre renk belirle - smooth geçiş
         health_pct = self.get_health_percentage()
 
+        # Renkler
+        healthy_color = (50, 200, 50)
+        healthy_glow = (100, 255, 100)
+
+        damaged_color = (200, 150, 50)
+        damaged_glow = (255, 200, 100)
+
+        critical_color = (200, 50, 50)
+        critical_glow = (255, 100, 100)
+
         if health_pct > 0.6:
-            # Sağlıklı - Yeşil
-            color = (50, 200, 50)
-            glow_color = (100, 255, 100)
+            # Sağlıklı - Yeşil (sabit)
+            color = healthy_color
+            glow_color = healthy_glow
         elif health_pct > 0.3:
-            # Hasarlı - Sarı/Turuncu
-            color = (200, 150, 50)
-            glow_color = (255, 200, 100)
+            # Hasarlı - Yeşil'den Sarı'ya smooth geçiş
+            # 0.6 -> 0.0 (yeşil), 0.3 -> 1.0 (sarı)
+            t = (0.6 - health_pct) / 0.3
+            color = self._lerp_color(healthy_color, damaged_color, t)
+            glow_color = self._lerp_color(healthy_glow, damaged_glow, t)
         else:
-            # Kritik - Kırmızı
-            color = (200, 50, 50)
-            glow_color = (255, 100, 100)
+            # Kritik - Sarı'dan Kırmızı'ya smooth geçiş
+            # 0.3 -> 0.0 (sarı), 0.0 -> 1.0 (kırmızı)
+            t = (0.3 - health_pct) / 0.3
+            color = self._lerp_color(damaged_color, critical_color, t)
+            glow_color = self._lerp_color(damaged_glow, critical_glow, t)
 
         # Camera transform
         draw_x = obj.x

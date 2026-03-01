@@ -118,6 +118,7 @@ class Movement:
         """
         Çarpışan objelere yay benzeri itme kuvveti uygular.
         İç içe geçme miktarına göre itme gücü değişir.
+        Lenf düğümüyle ekstra güçlü çarpışma.
         """
         scene = App().get_current_scene()
         hitbox_comp = obj.get_component("CircleHitbox")
@@ -159,9 +160,14 @@ class Movement:
                     dir_x = dx / distance
                     dir_y = dy / distance
 
-                    # İtme kuvveti (overlap ile orantılı)
-                    # Ne kadar iç içe geçmişse o kadar kuvvetli it
-                    push_strength = overlap * self.repulsion_force
+                    # Lenf düğümüyle çarpışma - ekstra güçlü itme
+                    is_lymph_node = "lymph_node" in other_obj.tags
+                    if is_lymph_node:
+                        # Lenf düğümüne çok güçlü itme - içine girmesin
+                        push_strength = overlap * self.repulsion_force * 5
+                    else:
+                        # Normal çarpışma
+                        push_strength = overlap * self.repulsion_force
 
                     # İvmeye ekle
                     self.vel_x += dir_x * push_strength * App().dt
