@@ -76,12 +76,22 @@ class InfectedCellAI:
         return closest
 
     def _move_towards(self, obj, target):
-        """Hedefe doğru hareket et."""
+        """Hedefe doğru hareket et - yüzeyinde dur."""
         dx = target.x - obj.x
         dy = target.y - obj.y
         distance = (dx * dx + dy * dy) ** 0.5
 
-        if distance > 1:
+        # Lenf düğümünün ve düşmanın yarıçapını al
+        target_lymph = target.get_component("LymphNode")
+        my_hitbox = obj.get_component("CircleHitbox")
+
+        if target_lymph and my_hitbox:
+            # Yüzeyde durma mesafesi
+            stop_distance = target_lymph.radius - my_hitbox.radius
+        else:
+            stop_distance = 1
+
+        if distance > stop_distance:
             # Normalize yön
             dir_x = dx / distance
             dir_y = dy / distance
@@ -90,7 +100,7 @@ class InfectedCellAI:
             self.vel_x = dir_x * self.speed
             self.vel_y = dir_y * self.speed
         else:
-            # Üs'e vardı, dur
+            # Yüzeye vardı, dur
             self.vel_x = 0
             self.vel_y = 0
 
