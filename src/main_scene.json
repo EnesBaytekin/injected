@@ -6,6 +6,30 @@
     {
       "x": 0,
       "y": 0,
+      "name": "music_player",
+      "tags": ["music"],
+      "components": [
+        {
+          "file": "scripts/MusicPlayer",
+          "args": ["main_theme.ogg", 0.25]
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "name": "sound_manager",
+      "tags": ["sound"],
+      "components": [
+        {
+          "file": "scripts/SoundManager",
+          "args": []
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
       "name": "background_renderer",
       "tags": ["background"],
       "components": [

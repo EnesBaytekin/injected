@@ -167,6 +167,19 @@ class ShootingController:
         # Sahneye ekle
         scene.add_object(bullet)
 
+        # SES: Bullet fırlatma
+        self._play_sound("throw_bullet", scene)
+
+    def _play_sound(self, sound_name, scene):
+        """Sound efektini çal."""
+        # SoundManager objesini bul
+        sound_managers = scene.get_objects_by_tag("sound")
+        if sound_managers and not sound_managers[0].dead:
+            sound_manager = sound_managers[0]
+            sound_comp = sound_manager.get_component("SoundManager")
+            if sound_comp and hasattr(sound_comp, 'instance'):
+                sound_comp.instance.play(sound_name, volume=0.7)
+
     def draw(self, obj):
         """Çizim yok."""
         pass

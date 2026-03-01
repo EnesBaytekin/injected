@@ -208,6 +208,9 @@ class SupporterCellAI:
 
         scene = App().get_current_scene()
 
+        # SES: Hücre patlaması
+        self._play_sound("cell_explosion", scene, volume=0.9)
+
         # İçindeki bullet'ların pozisyonlarını al
         bullet_positions = []
         for bullet_obj in self.swallowed_bullets:
@@ -282,6 +285,16 @@ class SupporterCellAI:
         # Supporter'ı yok et
         obj.kill()
         print("Supporter destroyed!")
+
+    def _play_sound(self, sound_name, scene, volume=0.6):
+        """Sound efektini çal."""
+        # SoundManager objesini bul
+        sound_managers = scene.get_objects_by_tag("sound")
+        if sound_managers and not sound_managers[0].dead:
+            sound_manager = sound_managers[0]
+            sound_comp = sound_manager.get_component("SoundManager")
+            if sound_comp and hasattr(sound_comp, 'instance'):
+                sound_comp.instance.play(sound_name, volume=volume)
 
     def draw(self, obj):
         """Çizim yok."""

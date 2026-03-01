@@ -178,6 +178,9 @@ class CellImage:
         # Normal hücre patlaması
         scene = App().get_current_scene()
 
+        # SES: Hücre patlaması
+        self._play_sound("cell_explosion", scene, volume=0.9)
+
         # 1. Küçük pixel particle'lar (toz) - 400 adet
         particle_obj1 = Object(obj.x, obj.y, depth=1000)
         effect1 = ParticleEffect(
@@ -344,6 +347,16 @@ class CellImage:
                    (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
                    (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)
         )
+
+    def _play_sound(self, sound_name, scene, volume=0.6):
+        """Sound efektini çal."""
+        # SoundManager objesini bul
+        sound_managers = scene.get_objects_by_tag("sound")
+        if sound_managers and not sound_managers[0].dead:
+            sound_manager = sound_managers[0]
+            sound_comp = sound_manager.get_component("SoundManager")
+            if sound_comp and hasattr(sound_comp, 'instance'):
+                sound_comp.instance.play(sound_name, volume=volume)
 
     def draw(self, obj):
         """Pixel art tarzı deformasyonlu hücre çiz - hıza göre eliptik deformasyon"""
