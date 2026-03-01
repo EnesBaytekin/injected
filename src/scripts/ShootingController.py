@@ -45,30 +45,44 @@ class ShootingController:
         if app.now - self.last_shot_time < self.cooldown:
             return
 
-        # Ateş yönü - hareket yönü
+        # Ateş yönü - input yönü (hareket yönü DEĞİL)
         dir_x = None
         dir_y = None
-
-        # Movement component'ten yön al
-        movement = obj.get_component("Movement")
-        if movement:
-            speed = (movement.vel_x ** 2 + movement.vel_y ** 2) ** 0.5
-            if speed > 1:  # Hareket ediyorsa
-                dir_x = movement.vel_x / speed
-                dir_y = movement.vel_y / speed
 
         # Joystick kontrolü (shoulder button veya right trigger)
         should_fire = False
         if self.joystick:
             if self.shoulder_button is not None:
-                # Bölünmüş hücre - shoulder button kullan, ateş yönü = hareket yönü
+                # Bölünmüş hücre - shoulder button kullan
                 trigger_pressed = self.joystick.get_button(self.shoulder_button)
                 trigger_just_pressed = trigger_pressed and not self.last_trigger_state
                 self.last_trigger_state = trigger_pressed
 
                 if trigger_just_pressed:
                     should_fire = True
-                    # Hareket etmiyorsa varsayılan yön (sağ)
+                    # Ateş yönü = thumbstick input yönü (hareket yönü DEĞİL)
+                    movement = obj.get_component("Movement")
+                    if movement and movement.joystick_thumb:
+                        # Joystick inputunu oku
+                        deadzone = 0.2
+                        if movement.joystick_thumb == "left":
+                            thumb_x = self.joystick.get_axis(0)
+                            thumb_y = self.joystick.get_axis(1)
+                        else:  # right
+                            thumb_x = self.joystick.get_axis(3)
+                            thumb_y = self.joystick.get_axis(4)
+
+                        # Deadzone kontrolü ve normalize
+                        if abs(thumb_x) > deadzone or abs(thumb_y) > deadzone:
+                            dir_x = thumb_x
+                            dir_y = thumb_y
+                            # Normalize et (magnitude önemli değil, yön önemli)
+                            mag = (dir_x ** 2 + dir_y ** 2) ** 0.5
+                            if mag > 0:
+                                dir_x /= mag
+                                dir_y /= mag
+
+                    # Input yoksa varsayılan yön (sağ)
                     if dir_x is None:
                         dir_x = 1.0
                         dir_y = 0.0
