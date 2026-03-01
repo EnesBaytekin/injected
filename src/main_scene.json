@@ -55,11 +55,11 @@
       "components": [
         {
           "file": "scripts/LymphNode",
-          "args": [40, 100]
+          "args": [80, 500]
         },
         {
           "file": "scripts/CircleHitbox",
-          "args": [40]
+          "args": [80]
         }
       ]
     },

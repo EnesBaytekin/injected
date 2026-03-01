@@ -39,20 +39,22 @@ class InfectedCellAI:
         if not lymph_nodes or lymph_nodes[0].dead:
             # Üs yoksa rastgele dolaş
             self._wander(obj)
-            return
-
-        # En yakın lenf düğümünü bul
-        target = self._find_closest_lymph_node(obj, lymph_nodes)
-
-        if target:
-            # Üs'e doğru hareket et
-            self._move_towards(obj, target)
         else:
-            self._wander(obj)
+            # En yakın lenf düğümünü bul
+            target = self._find_closest_lymph_node(obj, lymph_nodes)
+
+            if target:
+                # Üs'e doğru hareket et
+                self._move_towards(obj, target)
+            else:
+                self._wander(obj)
 
         # Pozisyon güncelle
         obj.x += self.vel_x * app.dt
         obj.y += self.vel_y * app.dt
+
+        # Çarpışma kontrolü - diğer düşmanlarla it
+        self._check_enemy_collisions(obj, scene)
 
     def _find_closest_lymph_node(self, obj, nodes):
         """En yakın lenf düğümünü bul."""
@@ -118,6 +120,47 @@ class InfectedCellAI:
 
         self.vel_x = self._wander_dir_x * self.speed * 0.5  # Yavaşça dolaş
         self.vel_y = self._wander_dir_y * self.speed * 0.5
+
+    def _check_enemy_collisions(self, obj, scene):
+        """Diğer düşmanlarla çarpışma kontrolü ve itme."""
+        # Tüm düşmanları bul (infected ve enemy tag'li)
+        for other in scene.get_all_objects():
+            if other is obj or other.dead:
+                continue
+
+            # Sadece düşmanlarla çarpış (infected veya enemy tag)
+            if "infected" not in other.tags and "enemy" not in other.tags:
+                continue
+
+            # Hitbox'ları al
+            my_hitbox = obj.get_component("CircleHitbox")
+            other_hitbox = other.get_component("CircleHitbox")
+
+            if not my_hitbox or not other_hitbox:
+                continue
+
+            # Mesafe hesapla
+            dx = obj.x - other.x
+            dy = obj.y - other.y
+            dist = (dx * dx + dy * dy) ** 0.5
+
+            # Minimum mesafe (yarıçaplar toplamı)
+            min_dist = my_hitbox.radius + other_hitbox.radius
+
+            # İç içe geçmişse it
+            if 0 < dist < min_dist:
+                overlap = min_dist - dist
+
+                # Normalize yön (diğerinden uzaklaş)
+                dir_x = dx / dist
+                dir_y = dy / dist
+
+                # İtme kuvveti (ne kadar iç içe, o kadar kuvvetli)
+                push_strength = 400
+
+                # Hıza ekle
+                self.vel_x += dir_x * push_strength * App().dt
+                self.vel_y += dir_y * push_strength * App().dt
 
     def draw(self, obj):
         """Çizim yok."""

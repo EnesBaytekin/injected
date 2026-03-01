@@ -14,7 +14,7 @@ class LymphNode:
     Oyuncu tarafından korunmalıdır.
     """
 
-    def __init__(self, radius=40, max_health=100):
+    def __init__(self, radius=80, max_health=500):
         """
         Args:
             radius: Üs yarıçapı (görsel ve collision)
@@ -58,8 +58,10 @@ class LymphNode:
             dist = (dx * dx + dy * dy) ** 0.5
 
             # Enfekte hücre üs'e değdiyse hasar ver
-            if dist < self.radius:
-                self.take_damage(0.5)  # Frame başına hasar
+            # Yüzeye yapışması için: tam içinde değilse ama yakınsa hasar ver
+            if dist < self.radius + enemy.get_component("CircleHitbox").radius:
+                # Düşman yüzeye yapışık, yavaşça can al
+                self.take_damage(0.1)  # Daha yavaş hasar
 
     def take_damage(self, amount):
         """Hasar al."""
