@@ -277,6 +277,9 @@ class CellImage:
 
         scene = App().get_current_scene()
 
+        # SES: Hücre patlaması (healer dönüşümü)
+        self._play_sound("cell_explosion", scene, volume=0.9)
+
         # 1. Outward explosion - mavi/yeşil particle'lar
         particle_obj1 = Object(obj.x, obj.y, depth=1000)
         effect1 = ParticleEffect(
