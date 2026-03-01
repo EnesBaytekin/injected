@@ -31,8 +31,16 @@ class SplitController:
         # Merge kontrolü
         self.merge_distance = 20  # Birleşme mesafesi (piksel)
 
+        # Elastik bağ kuvveti (uzaklaştıkça birbirini çeker)
+        self.elastic_max_distance = 220  # Maksimum mesafe (bundan sonra kuvvet başlar)
+        self.elastic_strength = 50  # Çekme kuvveti gücü (doğrudan pozisyon için düşük)
+
     def update(self, obj):
         """Bölünme/birleşme kontrolü."""
+        # Bölünmüş hücrelerde elastik kuvvet uygula
+        if self.is_split:
+            self._apply_elastic_force(obj)
+
         # Sadece bölünmemiş hücrelerde X tuşuna tepki ver
         if not self.is_split and self.joystick:
             # X button (button 2) - Bölünme
@@ -211,6 +219,34 @@ class SplitController:
         # Tag'leri ekle
         new_obj.tags.add("controllable")
         new_obj.tags.add("hero")  # Camera için hero tag'i
+
+    def _apply_elastic_force(self, obj):
+        """Bölünmüş hücreler çok uzaklaştığında birbirini çeken elastik kuvvet."""
+        partner_obj = self._get_partner_object()
+        if not partner_obj or partner_obj.dead:
+            return
+
+        # Mesafe hesapla
+        dx = partner_obj.x - obj.x
+        dy = partner_obj.y - obj.y
+        dist = (dx * dx + dy * dy) ** 0.5
+
+        # Maksimum mesafeyi geçtiyse kuvvet uygula
+        if dist > self.elastic_max_distance:
+            # Normalize yön (partner'a doğru)
+            dir_x = dx / dist
+            dir_y = dy / dist
+
+            # Mesafeye göre kuvvet hesapla (ne kadar uzak, o kadar güçlü)
+            excess_distance = dist - self.elastic_max_distance
+
+            # Sadece mesafeye bağlı kademeli kuvvet
+            force = excess_distance * self.elastic_strength
+
+            # Doğrudan pozisyona uygula (sürtünme yok, çarpışma mantığı gibi)
+            app = App()
+            obj.x += dir_x * force * app.dt
+            obj.y += dir_y * force * app.dt
 
     def _get_partner_object(self):
         """Partner objesini sahneden bul."""
