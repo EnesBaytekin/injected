@@ -163,12 +163,12 @@
       "x": 0,
       "y": 0,
       "name": "minimap",
-      "tags": ["minimap"],
-      "depth": 999999,
+      "tags": ["minimap", "camera"],
+      "depth": 1000000,
       "components": [
         {
           "file": "scripts/Minimap",
-          "args": [120, 10]
+          "args": [32, 5]
         }
       ]
     },
