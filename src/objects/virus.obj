@@ -1,12 +1,10 @@
 {
-  "x": 200,
-  "y": 100,
   "name": "virus",
   "tags": ["enemy"],
   "components": [
     {
       "file": "scripts/CellImage",
-      "args": [6, [150, 150, 200], 4, 5, 2.5]
+      "args": [6, [150, 150, 200], 4, 5, 2.5, 1]
     },
     {
       "file": "scripts/CircleHitbox",

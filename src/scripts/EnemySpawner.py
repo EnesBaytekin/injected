@@ -79,57 +79,12 @@ class EnemySpawner:
         self._spawn_enemy(enemy_type, spawn_x, spawn_y, scene)
 
     def _spawn_enemy(self, enemy_type, x, y, scene):
-        """Belirtilen tipte düşman spawnla."""
-        if enemy_type == "infected_cell":
-            # Enfekte hücre
-            enemy = Object(x, y)
+        """Belirtilen tipte düşman spawnla - .obj dosyasından."""
+        # .obj dosya yolu
+        obj_file = f"objects/{enemy_type}.obj"
 
-            # CellImage (turuncu/kırmızımsı)
-            from pygaminal import ScriptComponent
-            cell_image = ScriptComponent("scripts/CellImage", [12, [150, 100, 80], 2, 2, 2.5, 2])
-            enemy.add_component(cell_image)
-
-            # Hitbox
-            hitbox = ScriptComponent("scripts/CircleHitbox", [12])
-            enemy.add_component(hitbox)
-
-            # AI
-            ai = ScriptComponent("scripts/InfectedCellAI", [50])
-            enemy.add_component(ai)
-
-            enemy.tags.add("infected")
-
-        elif enemy_type == "bacteria":
-            # Bakteri
-            enemy = Object(x, y)
-
-            from pygaminal import ScriptComponent
-            cell_image = ScriptComponent("scripts/CellImage", [8, [200, 50, 50], 3, 4, 2.5, 1])
-            enemy.add_component(cell_image)
-
-            hitbox = ScriptComponent("scripts/CircleHitbox", [8])
-            enemy.add_component(hitbox)
-
-            ai = ScriptComponent("scripts/BacteriaAI", [80, 200])
-            enemy.add_component(ai)
-
-            enemy.tags.add("enemy")
-
-        elif enemy_type == "virus":
-            # Virüs
-            enemy = Object(x, y)
-
-            from pygaminal import ScriptComponent
-            cell_image = ScriptComponent("scripts/CellImage", [6, [150, 150, 200], 4, 5, 2.5])
-            enemy.add_component(cell_image)
-
-            hitbox = ScriptComponent("scripts/CircleHitbox", [6])
-            enemy.add_component(hitbox)
-
-            ai = ScriptComponent("scripts/VirusAI", [60, 100])
-            enemy.add_component(ai)
-
-            enemy.tags.add("enemy")
+        # Objeyi dosyadan yükle
+        enemy = Object.from_file(obj_file, x, y)
 
         # Sahneye ekle
         scene.add_object(enemy)

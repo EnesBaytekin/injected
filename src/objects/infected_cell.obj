@@ -1,12 +1,10 @@
 {
-  "x": 100,
-  "y": 150,
   "name": "infected_cell",
   "tags": ["infected"],
   "components": [
     {
       "file": "scripts/CellImage",
-      "args": [12, [150, 100, 80], 2, 2, 2.5]
+      "args": [12, [150, 100, 80], 2, 2, 2.5, 2]
     },
     {
       "file": "scripts/CircleHitbox",

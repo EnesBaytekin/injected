@@ -1,12 +1,10 @@
 {
-  "x": 80,
-  "y": 80,
   "name": "bacteria",
   "tags": ["enemy"],
   "components": [
     {
       "file": "scripts/CellImage",
-      "args": [8, [200, 50, 50], 3, 4, 2.5]
+      "args": [8, [200, 50, 50], 3, 4, 2.5, 1]
     },
     {
       "file": "scripts/CircleHitbox",
