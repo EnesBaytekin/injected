@@ -1,0 +1,20 @@
+{
+  "x": 0,
+  "y": 0,
+  "name": "supporter_cell",
+  "tags": ["supporter", "enemy"],
+  "components": [
+    {
+      "file": "scripts/SupporterCellVisual",
+      "args": [10, [180, 100, 180], 2.5, 3, 2.5]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [10]
+    },
+    {
+      "file": "scripts/SupporterCellAI",
+      "args": [80, 40]
+    }
+  ]
+}

@@ -12,20 +12,30 @@ class EnemySpawner:
     Lenf düğümü etrafında procedural olarak düşman oluşturur.
     """
 
-    def __init__(self, spawn_interval=5.0, max_enemies=10):
+    def __init__(self, spawn_interval=5.0, max_enemies=10, grace_period=20.0):
         """
         Args:
             spawn_interval: Spawn arası (saniye)
             max_enemies: Maksimum aynı anda kaç düşman olabilir
+            grace_period: Başlangıçta spawn yapmaz (saniye)
         """
         self.spawn_interval = spawn_interval
         self.max_enemies = max_enemies
+        self.grace_period = grace_period
         self.spawn_timer = 0.0
+        self.game_time = 0.0  # Toplam oyun süresi
 
     def update(self, obj):
         """Her frame spawn kontrolü."""
         app = App()
         scene = app.get_current_scene()
+
+        # Oyun süresini güncelle
+        self.game_time += app.dt
+
+        # Grace period kontrolü - ilk 20 saniye spawn yapma
+        if self.game_time < self.grace_period:
+            return
 
         # Timer güncelle
         self.spawn_timer += app.dt

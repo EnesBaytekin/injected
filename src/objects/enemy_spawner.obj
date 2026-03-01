@@ -1,0 +1,16 @@
+{
+  "x": 0,
+  "y": 0,
+  "name": "enemy_spawner",
+  "tags": ["enemy_spawner", "enemy"],
+  "components": [
+    {
+      "file": "scripts/EnemySpawnerObject",
+      "args": [35, 50]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [35]
+    }
+  ]
+}

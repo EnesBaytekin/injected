@@ -14,7 +14,7 @@ class LymphNode:
     Oyuncu tarafından korunmalıdır.
     """
 
-    def __init__(self, radius=80, max_health=500):
+    def __init__(self, radius=80, max_health=1000):
         """
         Args:
             radius: Üs yarıçapı (görsel ve collision)
@@ -23,6 +23,9 @@ class LymphNode:
         self.radius = radius
         self.max_health = max_health
         self.health = max_health
+
+        # Game over kontrolü
+        self.is_dead = False
 
         # Nabız animasyonu
         self.pulse_phase = 0.0
@@ -60,14 +63,25 @@ class LymphNode:
             # Enfekte hücre üs'e değdiyse hasar ver
             # Yüzeye yapışması için: tam içinde değilse ama yakınsa hasar ver
             if dist < self.radius + enemy.get_component("CircleHitbox").radius:
-                # Düşman yüzeye yapışık, yavaşça can al
-                self.take_damage(0.1)  # Daha yavaş hasar
+                # Düşman yüzeye yapışık, çok yavaş can al
+                self.take_damage(0.05)  # Yarı hasar
 
     def take_damage(self, amount):
         """Hasar al."""
+        if self.is_dead:
+            return
+
         self.health -= amount
-        if self.health < 0:
+        if self.health <= 0:
             self.health = 0
+            self.is_dead = True
+            self._on_death()
+
+    def _on_death(self):
+        """Lenf düğümü öldüğünde - game over."""
+        print("LYMPH NODE DESTROYED! GAME OVER!")
+        # Game over state'i burada handle edilebilir
+        # Şimdilik sadece print
 
     def heal(self, amount):
         """Can al."""

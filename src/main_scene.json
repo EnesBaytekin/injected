@@ -55,7 +55,7 @@
       "components": [
         {
           "file": "scripts/LymphNode",
-          "args": [80, 500]
+          "args": [80, 1000]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -144,62 +144,50 @@
       ]
     },
     {
-      "x": 50,
+      "x": 800,
       "y": 150,
-      "name": "infected_cell",
-      "tags": ["infected"],
+      "name": "spawner_1",
+      "tags": ["enemy_spawner"],
       "components": [
         {
-          "file": "scripts/CellImage",
-          "args": [12, [150, 100, 80], 2, 2, 2.5, 2]
+          "file": "scripts/EnemySpawnerObject",
+          "args": [35, 100]
         },
         {
           "file": "scripts/CircleHitbox",
-          "args": [12]
-        },
-        {
-          "file": "scripts/InfectedCellAI",
-          "args": [50]
+          "args": [35]
         }
       ]
     },
     {
-      "x": 80,
-      "y": 80,
-      "name": "bacteria",
-      "tags": ["enemy"],
+      "x": 300,
+      "y": 500,
+      "name": "spawner_2",
+      "tags": ["enemy_spawner"],
       "components": [
         {
-          "file": "scripts/CellImage",
-          "args": [8, [200, 50, 50], 3, 4, 2.5, 1]
+          "file": "scripts/EnemySpawnerObject",
+          "args": [35, 100]
         },
         {
           "file": "scripts/CircleHitbox",
-          "args": [8]
-        },
-        {
-          "file": "scripts/BacteriaAI",
-          "args": [80, 200]
+          "args": [35]
         }
       ]
     },
     {
-      "x": 200,
-      "y": 100,
-      "name": "virus",
-      "tags": ["enemy"],
+      "x": -200,
+      "y": -150,
+      "name": "spawner_3",
+      "tags": ["enemy_spawner"],
       "components": [
         {
-          "file": "scripts/CellImage",
-          "args": [6, [150, 150, 200], 4, 5, 2.5, 1]
+          "file": "scripts/EnemySpawnerObject",
+          "args": [35, 100]
         },
         {
           "file": "scripts/CircleHitbox",
-          "args": [6]
-        },
-        {
-          "file": "scripts/VirusAI",
-          "args": [60, 100]
+          "args": [35]
         }
       ]
     },
@@ -223,7 +211,20 @@
       "components": [
         {
           "file": "scripts/EnemySpawner",
-          "args": [5.0, 15]
+          "args": [5.0, 15, 20.0]
+        }
+      ]
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "name": "minimap",
+      "tags": ["minimap"],
+      "depth": 999999,
+      "components": [
+        {
+          "file": "scripts/Minimap",
+          "args": [120, 10]
         }
       ]
     },
