@@ -102,8 +102,17 @@ class SupporterCellVisual:
         ai_comp = obj.get_component("SupporterCellAI")
         target_spawner = None
 
-        if ai_comp and hasattr(ai_comp.instance, 'parent_spawner'):
-            target_spawner = ai_comp.instance.parent_spawner
+        # Sindirme durumu - renk değişimi için
+        is_digesting = False
+        digestion_progress = 0.0
+
+        if ai_comp:
+            if hasattr(ai_comp.instance, 'parent_spawner'):
+                target_spawner = ai_comp.instance.parent_spawner
+            if hasattr(ai_comp.instance, 'is_digesting'):
+                is_digesting = ai_comp.instance.is_digesting
+            if hasattr(ai_comp.instance, 'digestion_progress'):
+                digestion_progress = ai_comp.instance.digestion_progress
 
         # Parent spawner hayatta mı ve bağlı mı?
         if target_spawner and not target_spawner.dead:
@@ -138,9 +147,9 @@ class SupporterCellVisual:
                     pass
 
         # Hücre gövdesini çiz
-        self._draw_cell_body(obj)
+        self._draw_cell_body(obj, is_digesting, digestion_progress)
 
-    def _draw_cell_body(self, obj):
+    def _draw_cell_body(self, obj, is_digesting=False, digestion_progress=0.0):
         """Hücre gövdesini çiz (jölemsi deformasyonlu)."""
         screen = Screen()
 
@@ -151,6 +160,17 @@ class SupporterCellVisual:
 
         if not self.current_points:
             return
+
+        # Sindirme durumuna göre renk değişimi
+        fill_color = self.color
+        if is_digesting:
+            # Mor → koyu mor/siyah interpolasyon
+            base_color = self.color
+            target_color = (50, 20, 50)  # Çok koyu mor
+            r = int(base_color[0] + (target_color[0] - base_color[0]) * digestion_progress)
+            g = int(base_color[1] + (target_color[1] - base_color[1]) * digestion_progress)
+            b = int(base_color[2] + (target_color[2] - base_color[2]) * digestion_progress)
+            fill_color = (max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b)))
 
         # Catmull-Rom spline ile yumuşak eğri
         curve_points = []
@@ -169,7 +189,7 @@ class SupporterCellVisual:
 
         # Doldur
         if len(curve_points) > 2:
-            pygame.draw.polygon(surface, self.color, curve_points)
+            pygame.draw.polygon(surface, fill_color, curve_points)
             # Siyah çerçeve
             pygame.draw.polygon(surface, (0, 0, 0), curve_points, 2)
 

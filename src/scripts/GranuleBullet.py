@@ -214,8 +214,12 @@ class GranuleBullet:
         self.orbit_speed = random.uniform(1.5, 3.0)  # Dönme hızı
 
         # Hücreye bildir - yutuldu!
-        if hasattr(cell_image.instance, 'swallow_bullet'):
-            cell_image.instance.swallow_bullet(obj)
+        # cell_image ScriptComponent olabilir (instance ile erişilir)
+        # veya direkt instance olabilir (SupporterCellAI gibi)
+        target = cell_image.instance if hasattr(cell_image, 'instance') else cell_image
+
+        if hasattr(target, 'swallow_bullet'):
+            target.swallow_bullet(obj)
 
     def _spawn_death_particles(self, obj):
         """Bullet yok olurken mini particle patlaması oluştur."""
