@@ -178,6 +178,11 @@ class GameOverUI:
             app = App()
             app.set_scene("menu")
 
+            # Background color'u set et
+            menu_scene = app.get_current_scene()
+            if menu_scene.background_color:
+                Screen().set_background_color(menu_scene.background_color)
+
             # Game over'ı resetle
             self.is_game_over = False
             self.fade_alpha = 0.0

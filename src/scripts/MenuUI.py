@@ -74,6 +74,12 @@ class MenuUI:
             # Oyun sahnesine geç
             app = App()
             app.set_scene("game")
+
+            # Background color'u set et
+            game_scene = app.get_current_scene()
+            if game_scene.background_color:
+                Screen().set_background_color(game_scene.background_color)
+
             print("Starting game...")
 
         elif self.hovered_button == 'quit':
