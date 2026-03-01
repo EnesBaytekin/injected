@@ -1,0 +1,20 @@
+{
+  "x": 0,
+  "y": 0,
+  "name": "healer_cell",
+  "tags": ["healer", "friendly"],
+  "components": [
+    {
+      "file": "scripts/HealerCellVisual",
+      "args": [8, [100, 255, 150], 2, 2, 2.5]
+    },
+    {
+      "file": "scripts/CircleHitbox",
+      "args": [8]
+    },
+    {
+      "file": "scripts/HealerCellAI",
+      "args": [80, 60]
+    }
+  ]
+}

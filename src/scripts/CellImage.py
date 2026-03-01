@@ -167,7 +167,15 @@ class CellImage:
                 bullet_positions.append((bullet_obj.x, bullet_obj.y))
                 bullet_obj.kill()
 
-        # Ana patlama - çok sayıda çeşitli particle
+        # VİRÜS MÜ? - Healer cell dönüşümü kontrolü
+        is_virus = "virus" in obj.tags or obj.get_component("VirusAI") is not None
+
+        if is_virus:
+            # Virüs öldü - healer cell'e dönüş!
+            self._transform_to_healer(obj)
+            return
+
+        # Normal hücre patlaması
         scene = App().get_current_scene()
 
         # 1. Küçük pixel particle'lar (toz) - 400 adet
@@ -257,6 +265,68 @@ class CellImage:
             scene.add_object(bullet_particle)
 
         # Hücreyi yok et
+        obj.kill()
+
+    def _transform_to_healer(self, obj):
+        """Virüs healer cell'e dönüşür - particle'lar outward sonra inward converge."""
+        from pygaminal import App, Object
+        from scripts.ParticleEffect import ParticleEffect
+
+        scene = App().get_current_scene()
+
+        # 1. Outward explosion - mavi/yeşil particle'lar
+        particle_obj1 = Object(obj.x, obj.y, depth=1000)
+        effect1 = ParticleEffect(
+            particle_count=60,
+            shape=ParticleEffect.SHAPE_PIXEL,
+            color=((150, 150, 255), (100, 255, 200)),  # Mavi -> yeşil
+            lifetime=(0.4, 0.8),
+            size=(2, 4),
+            velocity=(80, 150),  # İlk başta outward
+            acceleration=(-80, -60),  # Sonra inward (negative acceleration)
+            spawn_mode="burst",
+            one_shot=True,
+            fade_out=True,
+            friction=0.5,
+            spread=360
+        )
+        from pygaminal import ScriptComponent
+        script_comp1 = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp1.instance = effect1
+        particle_obj1.add_component(script_comp1)
+        scene.add_object(particle_obj1)
+
+        # 2. Converging particles - merkezden outward sonra geri inward
+        particle_obj2 = Object(obj.x, obj.y, depth=999)
+        effect2 = ParticleEffect(
+            particle_count=30,
+            shape=ParticleEffect.SHAPE_SHRINKING_CIRCLE,
+            color=((100, 200, 255), (100, 255, 150)),  # Açık mavi -> yeşil
+            lifetime=(0.6, 1.0),
+            size=(3, 6),
+            velocity=(100, 180),
+            acceleration=(-120, -100),  # Güçlü inward pull
+            spawn_mode="burst",
+            one_shot=True,
+            fade_out=True,
+            friction=0.0,  # No friction - acceleration does the work
+            spread=360
+        )
+        script_comp2 = ScriptComponent("scripts/ParticleEffect", [])
+        script_comp2.instance = effect2
+        particle_obj2.add_component(script_comp2)
+        scene.add_object(particle_obj2)
+
+        # 3. Biraz bekle, sonra healer cell spawnla
+        # Timer object oluştur
+        timer_obj = Object(obj.x, obj.y, depth=1)
+
+        from pygaminal import ScriptComponent
+        timer_comp = ScriptComponent("scripts/HealerSpawnTimer", [obj.x, obj.y, 0.5])
+        timer_obj.add_component(timer_comp)
+        scene.add_object(timer_obj)
+
+        # Virüsü yok et
         obj.kill()
 
     def _catmull_rom_spline(self, p0, p1, p2, p3, t):

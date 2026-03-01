@@ -151,7 +151,7 @@
       "components": [
         {
           "file": "scripts/CellImage",
-          "args": [12, [150, 100, 80], 2, 2, 2.5]
+          "args": [12, [150, 100, 80], 2, 2, 2.5, 2]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -171,7 +171,7 @@
       "components": [
         {
           "file": "scripts/CellImage",
-          "args": [8, [200, 50, 50], 3, 4, 2.5]
+          "args": [8, [200, 50, 50], 3, 4, 2.5, 1]
         },
         {
           "file": "scripts/CircleHitbox",
@@ -191,7 +191,7 @@
       "components": [
         {
           "file": "scripts/CellImage",
-          "args": [6, [150, 150, 200], 4, 5, 2.5]
+          "args": [6, [150, 150, 200], 4, 5, 2.5, 1]
         },
         {
           "file": "scripts/CircleHitbox",
